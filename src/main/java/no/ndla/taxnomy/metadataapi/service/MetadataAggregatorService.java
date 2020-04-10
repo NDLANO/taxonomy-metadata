@@ -9,4 +9,6 @@ import java.util.Set;
 public interface MetadataAggregatorService {
     MetadataDto getMetadataForTaxonomyEntity(String publicId) throws InvalidPublicIdException;
     MetadataDto updateMetadataForTaxonomyEntity(String publicId, MetadataDto updateDto) throws InvalidPublicIdException;
+
+    void deleteMetadataForTaxonomyEntity(String publicId) throws InvalidPublicIdException;
 }

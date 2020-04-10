@@ -10,4 +10,6 @@ public interface TaxonomyEntityService {
     TaxonomyEntity getOrCreateTaxonomyEntity(String publicId);
 
     void saveTaxonomyEntity(TaxonomyEntity taxonomyEntity);
+
+    void deleteTaxonomyEntity(String publicId);
 }

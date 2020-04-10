@@ -6,11 +6,9 @@ import no.ndla.taxnomy.metadataapi.service.dto.MetadataDto;
 import no.ndla.taxnomy.metadataapi.service.exception.InvalidPublicIdException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.net.URI;
 
 @RestController
 @RequestMapping("/v1/taxonomy_entities/{publicId}")
@@ -42,6 +40,17 @@ public class MetadataController {
             return ResponseEntity
                     .ok()
                     .body(metadataDto);
+        } catch (InvalidPublicIdException e) {
+            throw new InvalidRequestException(e);
+        }
+    }
+
+    @DeleteMapping
+    public ResponseEntity<String> delete(@PathVariable String publicId) {
+        try {
+            metadataAggregatorService.deleteMetadataForTaxonomyEntity(publicId);
+
+            return ResponseEntity.noContent().build();
         } catch (InvalidPublicIdException e) {
             throw new InvalidRequestException(e);
         }

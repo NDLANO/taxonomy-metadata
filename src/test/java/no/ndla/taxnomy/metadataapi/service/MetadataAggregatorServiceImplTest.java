@@ -170,4 +170,26 @@ class MetadataAggregatorServiceImplTest {
             verify(taxonomyEntity, times(0)).removeCompetenceAim(any());
         }
     }
+
+    @Test
+    void deleteMetadataForTaxonomyEntity() throws InvalidPublicIdException {
+        doThrow(new InvalidPublicIdException("")).when(publicIdValidator).validatePublicId("urn:test:2");
+
+        {
+            verifyNoInteractions(taxonomyEntityService);
+            verifyNoInteractions(publicIdValidator);
+
+            metadataAggregatorService.deleteMetadataForTaxonomyEntity("urn:test:1");
+
+            verify(taxonomyEntityService).deleteTaxonomyEntity("urn:test:1");
+            verify(publicIdValidator).validatePublicId("urn:test:1");
+        }
+
+        try {
+            metadataAggregatorService.deleteMetadataForTaxonomyEntity("urn:test:2");
+
+            fail("Expected InvalidPublicIdException");
+        } catch (InvalidPublicIdException ignored) {
+        }
+    }
 }
