@@ -68,4 +68,10 @@ public class TaxonomyEntity {
             this.id = UUID.randomUUID();
         }
     }
+
+    @PreRemove
+    void preRemove() {
+        // De-links the competence aims before removal (but keeps the competence aim entities)
+        Set.copyOf(this.competenceAims).forEach(this::removeCompetenceAim);
+    }
 }
