@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collector;
@@ -110,6 +111,24 @@ class MetadataControllerTest {
             } catch (InvalidRequestException ignored) {
 
             }
+        }
+    }
+
+    @Test
+    void delete() throws InvalidPublicIdException {
+        doThrow(new InvalidPublicIdException("")).when(metadataAggregatorService).deleteMetadataForTaxonomyEntity("urn:test:2");
+
+        {
+            final var returned = metadataController.delete("urn:test:1");
+            verify(metadataAggregatorService).deleteMetadataForTaxonomyEntity("urn:test:1");
+            assertEquals(HttpStatus.NO_CONTENT, returned.getStatusCode());
+        }
+
+        try {
+            metadataController.delete("urn:test:2");
+            fail("Expected InvalidRequestException");
+        } catch (InvalidRequestException ignored) {
+
         }
     }
 }

@@ -83,4 +83,11 @@ public class MetadataAggregatorServiceImpl implements MetadataAggregatorService 
 
         return getMetadataForTaxonomyEntity(publicId);
     }
+
+    @Override
+    public void deleteMetadataForTaxonomyEntity(String publicId) throws InvalidPublicIdException {
+        publicIdValidator.validatePublicId(publicId);
+
+        taxonomyEntityService.deleteTaxonomyEntity(publicId);
+    }
 }

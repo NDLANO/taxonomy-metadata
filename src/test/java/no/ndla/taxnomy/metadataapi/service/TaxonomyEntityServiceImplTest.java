@@ -1,6 +1,8 @@
 package no.ndla.taxnomy.metadataapi.service;
 
+import no.ndla.taxnomy.metadataapi.data.domain.CompetenceAim;
 import no.ndla.taxnomy.metadataapi.data.domain.TaxonomyEntity;
+import no.ndla.taxnomy.metadataapi.data.repository.CompetenceAimRepository;
 import no.ndla.taxnomy.metadataapi.data.repository.TaxonomyEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -75,5 +79,40 @@ class TaxonomyEntityServiceImplTest {
         assertNotNull(taxonomyEntity.getId());
 
         assertTrue(taxonomyEntityRepository.findFirstByPublicId("urn:test:1303").isPresent());
+    }
+
+    @Test
+    @Transactional
+    void deleteTaxonomyEntity(@Autowired CompetenceAimRepository competenceAimRepository) {
+        final var taxonomyEntity = new TaxonomyEntity();
+        taxonomyEntity.setPublicId("urn:test:34");
+        taxonomyEntityRepository.saveAndFlush(taxonomyEntity);
+
+        final var competenceAim1 = new CompetenceAim();
+        competenceAim1.setCode("A1");
+        final var competenceAim2 = new CompetenceAim();
+        competenceAim2.setCode("A2");
+
+        taxonomyEntity.addCompetenceAim(competenceAim1);
+        taxonomyEntity.addCompetenceAim(competenceAim2);
+
+        competenceAimRepository.saveAll(Set.of(competenceAim1, competenceAim2));
+
+        assertNotNull(competenceAim1.getId());
+        assertNotNull(competenceAim2.getId());
+
+        final var aim1Id = competenceAim1.getId();
+        final var aim2Id = competenceAim2.getId();
+        final var entityId = taxonomyEntity.getId();
+
+        assertTrue(competenceAimRepository.findById(aim1Id).isPresent());
+        assertTrue(competenceAimRepository.findById(aim2Id).isPresent());
+        assertTrue(taxonomyEntityRepository.findById(entityId).isPresent());
+
+        taxonomyEntityService.deleteTaxonomyEntity("urn:test:34");
+
+        assertFalse(competenceAimRepository.findById(aim1Id).isPresent());
+        assertFalse(competenceAimRepository.findById(aim2Id).isPresent());
+        assertFalse(taxonomyEntityRepository.findById(entityId).isPresent());
     }
 }

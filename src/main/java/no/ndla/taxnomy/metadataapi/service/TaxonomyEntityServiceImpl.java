@@ -38,4 +38,11 @@ public class TaxonomyEntityServiceImpl implements TaxonomyEntityService {
     public void saveTaxonomyEntity(TaxonomyEntity taxonomyEntity) {
         taxonomyEntityRepository.saveAndFlush(taxonomyEntity);
     }
+
+    @Override
+    @Transactional
+    public void deleteTaxonomyEntity(String publicId) {
+        taxonomyEntityRepository.findFirstByPublicId(publicId)
+                .ifPresent(taxonomyEntityRepository::delete);
+    }
 }
