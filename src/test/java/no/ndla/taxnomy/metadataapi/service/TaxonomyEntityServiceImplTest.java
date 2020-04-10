@@ -84,17 +84,22 @@ class TaxonomyEntityServiceImplTest {
     @Test
     @Transactional
     void deleteTaxonomyEntity(@Autowired CompetenceAimRepository competenceAimRepository) {
-        final var taxonomyEntity = new TaxonomyEntity();
-        taxonomyEntity.setPublicId("urn:test:34");
-        taxonomyEntityRepository.saveAndFlush(taxonomyEntity);
+        final var taxonomyEntity1 = new TaxonomyEntity();
+        taxonomyEntity1.setPublicId("urn:test:34");
+        taxonomyEntityRepository.saveAndFlush(taxonomyEntity1);
+
+        final var taxonomyEntity2 = new TaxonomyEntity();
+        taxonomyEntity2.setPublicId("urn:test:35");
+        taxonomyEntityRepository.saveAndFlush(taxonomyEntity2);
 
         final var competenceAim1 = new CompetenceAim();
         competenceAim1.setCode("A1");
         final var competenceAim2 = new CompetenceAim();
         competenceAim2.setCode("A2");
 
-        taxonomyEntity.addCompetenceAim(competenceAim1);
-        taxonomyEntity.addCompetenceAim(competenceAim2);
+        taxonomyEntity1.addCompetenceAim(competenceAim1);
+        taxonomyEntity1.addCompetenceAim(competenceAim2);
+        taxonomyEntity2.addCompetenceAim(competenceAim2);
 
         competenceAimRepository.saveAll(Set.of(competenceAim1, competenceAim2));
 
@@ -103,16 +108,34 @@ class TaxonomyEntityServiceImplTest {
 
         final var aim1Id = competenceAim1.getId();
         final var aim2Id = competenceAim2.getId();
-        final var entityId = taxonomyEntity.getId();
+        final var entityId1 = taxonomyEntity1.getId();
+        final var entityId2 = taxonomyEntity2.getId();
 
         assertTrue(competenceAimRepository.findById(aim1Id).isPresent());
         assertTrue(competenceAimRepository.findById(aim2Id).isPresent());
-        assertTrue(taxonomyEntityRepository.findById(entityId).isPresent());
+        assertTrue(taxonomyEntityRepository.findById(entityId1).isPresent());
+
+        assertEquals(1, competenceAim1.getTaxonomyEntities().size());
+        assertEquals(2, competenceAim2.getTaxonomyEntities().size());
+        assertTrue(competenceAim1.getTaxonomyEntities().contains(taxonomyEntity1));
+        assertTrue(competenceAim2.getTaxonomyEntities().containsAll(Set.of(taxonomyEntity1, taxonomyEntity2)));
 
         taxonomyEntityService.deleteTaxonomyEntity("urn:test:34");
 
-        assertFalse(competenceAimRepository.findById(aim1Id).isPresent());
-        assertFalse(competenceAimRepository.findById(aim2Id).isPresent());
-        assertFalse(taxonomyEntityRepository.findById(entityId).isPresent());
+        assertTrue(competenceAimRepository.findById(aim2Id).isPresent());
+
+        assertFalse(taxonomyEntityRepository.findById(entityId1).isPresent());
+        assertTrue(taxonomyEntityRepository.findById(entityId2).isPresent());
+
+        assertEquals(0, competenceAim1.getTaxonomyEntities().size());
+        assertEquals(1, competenceAim2.getTaxonomyEntities().size());
+        assertTrue(competenceAim2.getTaxonomyEntities().contains(taxonomyEntity2));
+
+        taxonomyEntityService.deleteTaxonomyEntity("urn:test:35");
+
+        assertEquals(0, competenceAim1.getTaxonomyEntities().size());
+        assertEquals(0, competenceAim2.getTaxonomyEntities().size());
+
+        assertFalse(taxonomyEntityRepository.findById(entityId2).isPresent());
     }
 }
