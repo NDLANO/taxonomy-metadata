@@ -1,11 +1,10 @@
 package no.ndla.taxnomy.metadataapi.service.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.springframework.validation.annotation.Validated;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.util.HashSet;
 import java.util.Set;
@@ -33,8 +32,10 @@ public class MetadataDto {
         }
     }
 
-    @JsonIgnore
+    @JsonProperty(access = Access.READ_ONLY)
     private String publicId;
+
+    private Boolean visible;
 
     @Valid
     private Set<CompetenceAim> competenceAims;
@@ -71,5 +72,15 @@ public class MetadataDto {
         if (this.competenceAims == null) {
             this.competenceAims = new HashSet<>();
         }
+
+        this.visible = true;
+    }
+
+    public Boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(Boolean visible) {
+        this.visible = visible;
     }
 }

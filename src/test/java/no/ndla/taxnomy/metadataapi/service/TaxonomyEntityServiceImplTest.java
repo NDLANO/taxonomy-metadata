@@ -138,4 +138,33 @@ class TaxonomyEntityServiceImplTest {
 
         assertFalse(taxonomyEntityRepository.findById(entityId2).isPresent());
     }
+
+    @Test
+    @Transactional
+    void getTaxonomyEntities() {
+        final var entity1 = new TaxonomyEntity();
+        entity1.setPublicId("urn:test:1");
+        entity1.setVisible(true);
+
+        final var entity2 = new TaxonomyEntity();
+        entity2.setPublicId("urn:test:2");
+        entity2.setVisible(false);
+
+        final var entity3 = new TaxonomyEntity();
+        entity3.setPublicId("urn:test:3");
+        entity3.setVisible(true);
+
+        taxonomyEntityRepository.saveAll(Set.of(entity1, entity2, entity3));
+
+        final var returned1 = taxonomyEntityService.getTaxonomyEntities(Set.of("urn:test:1", "urn:test:3"));
+        assertEquals(2, returned1.size());
+        assertTrue(returned1.containsAll(Set.of(entity1, entity3)));
+
+        final var returned2 = taxonomyEntityService.getTaxonomyEntities(Set.of());
+        assertEquals(0, returned2.size());
+
+        final var returned3 = taxonomyEntityService.getTaxonomyEntities(Set.of("urn:test:1", "urn:test:4"));
+        assertEquals(1, returned3.size());
+        assertTrue(returned3.contains(entity1));
+    }
 }

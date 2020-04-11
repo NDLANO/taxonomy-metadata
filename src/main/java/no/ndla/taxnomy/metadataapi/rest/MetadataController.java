@@ -9,9 +9,12 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 
 @RestController
-@RequestMapping("/v1/taxonomy_entities/{publicId}")
+@RequestMapping("/v1/taxonomy_entities")
 public class MetadataController {
     private final MetadataAggregatorService metadataAggregatorService;
 
@@ -20,6 +23,27 @@ public class MetadataController {
     }
 
     @GetMapping
+    public List<MetadataDto> getMultiple(@RequestParam String publicIds) {
+        // Read comma separated list of unique publicIds in query parameter
+
+        if (publicIds.length() == 0) {
+            return List.of();
+        }
+
+        final var publicIdSet = new HashSet<>(Arrays.asList(publicIds.split(",")));
+
+        if (publicIdSet.size() > 100) {
+            throw new InvalidRequestException("Cannot get metadata for more than 100 entities in each request");
+        }
+
+        try {
+            return metadataAggregatorService.getMetadataForTaxonomyEntities(publicIdSet);
+        } catch (InvalidPublicIdException e) {
+            throw new InvalidRequestException(e);
+        }
+    }
+
+    @GetMapping("/{publicId}")
     public MetadataDto get(@PathVariable String publicId) {
         try {
             return metadataAggregatorService.getMetadataForTaxonomyEntity(publicId);
@@ -28,7 +52,7 @@ public class MetadataController {
         }
     }
 
-    @PutMapping
+    @PutMapping("/{publicId}")
     public ResponseEntity<MetadataDto> put(@PathVariable String publicId, @RequestBody @Valid MetadataDto requestMetadataDto, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult.getErrorCount() + " errors in provided body, first error: " + bindingResult.getAllErrors().get(0));
@@ -45,7 +69,7 @@ public class MetadataController {
         }
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{publicId}")
     public ResponseEntity<String> delete(@PathVariable String publicId) {
         try {
             metadataAggregatorService.deleteMetadataForTaxonomyEntity(publicId);

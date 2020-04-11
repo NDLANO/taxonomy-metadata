@@ -7,6 +7,8 @@ import no.ndla.taxnomy.metadataapi.service.exception.InvalidPublicIdException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -169,6 +171,26 @@ class MetadataAggregatorServiceImplTest {
             verify(taxonomyEntity).addCompetenceAim(aimToAdd2);
             verify(taxonomyEntity, times(0)).removeCompetenceAim(any());
         }
+
+        // Test setting visible flag
+        // Test merging with no existing entries
+        {
+            final var taxonomyEntity = mock(TaxonomyEntity.class);
+            when(taxonomyEntity.getCompetenceAims()).thenReturn(Set.of());
+            when(taxonomyEntityService.getOrCreateTaxonomyEntity("urn:test:4004")).thenReturn(taxonomyEntity);
+
+            final var requestObject = new MetadataDto("urn:test:4004");
+
+            metadataAggregatorService.updateMetadataForTaxonomyEntity("urn:test:4004", requestObject);
+
+            verify(taxonomyEntity, times(0)).setVisible(any(Boolean.class));
+
+            requestObject.setVisible(false);
+
+            metadataAggregatorService.updateMetadataForTaxonomyEntity("urn:test:4004", requestObject);
+
+            verify(taxonomyEntity).setVisible(false);
+        }
     }
 
     @Test
@@ -190,6 +212,67 @@ class MetadataAggregatorServiceImplTest {
 
             fail("Expected InvalidPublicIdException");
         } catch (InvalidPublicIdException ignored) {
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void getMetadataForTaxonomyEntities() throws InvalidPublicIdException {
+        final var entity1 = mock(TaxonomyEntity.class);
+        when(entity1.getPublicId()).thenReturn("urn:test:1");
+        when(entity1.isVisible()).thenReturn(true);
+        final var entity3 = mock(TaxonomyEntity.class);
+        when(entity3.getPublicId()).thenReturn("urn:test:3");
+        when(entity3.isVisible()).thenReturn(false);
+
+        final var aim1 = mock(CompetenceAim.class);
+        when(aim1.getCode()).thenReturn("A1");
+        final var aim2 = mock(CompetenceAim.class);
+        when(aim2.getCode()).thenReturn("A2");
+
+        when(entity1.getCompetenceAims()).thenReturn(Set.of(aim1, aim2));
+
+        when(taxonomyEntityService.getTaxonomyEntities(any(Collection.class))).thenAnswer(invocationOnMock -> {
+            final var requestList = (Collection<String>) invocationOnMock.getArgument(0, Collection.class);
+
+            assertEquals(3, requestList.size());
+            assertTrue(requestList.containsAll(Set.of("urn:test:1", "urn:test:2", "urn:test:3")));
+
+            return List.of(entity1, entity3);
+        });
+
+        final var returned = metadataAggregatorService.getMetadataForTaxonomyEntities(Set.of("urn:test:1", "urn:test:2", "urn:test:3"));
+
+        verify(publicIdValidator).validatePublicId("urn:test:1");
+        verify(publicIdValidator).validatePublicId("urn:test:2");
+        verify(publicIdValidator).validatePublicId("urn:test:3");
+
+        assertEquals(3, returned.size());
+
+        for (var dto : returned) {
+            switch (dto.getPublicId()) {
+                case "urn:test:1":
+                    assertTrue(dto.isVisible());
+                    assertEquals(2, dto.getCompetenceAims().size());
+                    assertTrue(
+                            dto.getCompetenceAims().stream()
+                                    .map(MetadataDto.CompetenceAim::getCode)
+                                    .collect(Collectors.toSet())
+                                    .containsAll(Set.of("A1", "A2"))
+                    );
+                    break;
+                case "urn:test:2":
+                    assertTrue(dto.isVisible());
+                    assertEquals(0, dto.getCompetenceAims().size());
+                    break;
+                case "urn:test:3":
+                    assertFalse(dto.isVisible());
+                    assertEquals(0, dto.getCompetenceAims().size());
+                    break;
+                default:
+                    fail("Unexpected publicId");
+                    break;
+            }
         }
     }
 }

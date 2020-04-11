@@ -115,4 +115,27 @@ class TaxonomyEntityTest {
 
         assertEquals(0, taxonomyEntity.getCompetenceAims().size());
     }
+
+    @Test
+    void isVisible() {
+        assertTrue(taxonomyEntity.isVisible());
+
+        setField(taxonomyEntity, "visible", false);
+        assertFalse(taxonomyEntity.isVisible());
+
+        setField(taxonomyEntity, "visible", true);
+        assertTrue(taxonomyEntity.isVisible());
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    @Test
+    void setVisible() {
+        assertTrue((boolean) getField(taxonomyEntity, "visible"));
+
+        taxonomyEntity.setVisible(false);
+        assertFalse((boolean) getField(taxonomyEntity, "visible"));
+
+        taxonomyEntity.setVisible(true);
+        assertTrue((boolean) getField(taxonomyEntity, "visible"));
+    }
 }
