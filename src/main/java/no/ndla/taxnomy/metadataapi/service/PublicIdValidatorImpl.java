@@ -10,6 +10,10 @@ import java.net.URISyntaxException;
 public class PublicIdValidatorImpl implements PublicIdValidator {
     @Override
     public void validatePublicId(String publicId) throws InvalidPublicIdException {
+        if (!publicId.toLowerCase().equals(publicId)) {
+            throw new InvalidPublicIdException("ID must only contain lower-case letters");
+        }
+
         try {
             final var uri = new URI(publicId);
 

@@ -23,12 +23,15 @@ public class TaxonomyEntity {
     @CreationTimestamp
     private Instant createdAt;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinTable(name = "taxonomy_entity_competence_aim",
             joinColumns = @JoinColumn(name = "taxonomy_entity_id"),
             inverseJoinColumns = @JoinColumn(name = "competence_aim_id")
     )
     private Set<CompetenceAim> competenceAims = new HashSet<>();
+
+    @Column
+    private boolean visible = true;
 
     public void addCompetenceAim(CompetenceAim competenceAim) {
         this.competenceAims.add(competenceAim);
@@ -73,5 +76,13 @@ public class TaxonomyEntity {
     void preRemove() {
         // De-links the competence aims before removal (but keeps the competence aim entities)
         Set.copyOf(this.competenceAims).forEach(this::removeCompetenceAim);
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
     }
 }

@@ -3,7 +3,7 @@ package no.ndla.taxnomy.metadataapi.service;
 import no.ndla.taxnomy.metadataapi.service.exception.InvalidPublicIdException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class PublicIdValidatorImplTest {
 
@@ -14,6 +14,13 @@ class PublicIdValidatorImplTest {
         validator.validatePublicId("urn:test:1");
 
         validator.validatePublicId("urn:test");
+
+        try {
+            validator.validatePublicId("urn:Test:1");
+            fail("Expected InvalidPublicIdException");
+        } catch (InvalidPublicIdException ignored) {
+
+        }
 
         try {
             validator.validatePublicId("");

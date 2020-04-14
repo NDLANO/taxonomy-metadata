@@ -8,10 +8,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static org.springframework.transaction.annotation.Propagation.MANDATORY;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 @Service
@@ -26,23 +27,52 @@ public class MetadataAggregatorServiceImpl implements MetadataAggregatorService 
         this.publicIdValidator = publicIdValidator;
     }
 
+    private MetadataDto createEmptyDto(String publicId) {
+        final var metadataDto = new MetadataDto(publicId);
+        metadataDto.populateEmpty();
+
+        return metadataDto;
+    }
+
+    private MetadataDto populateDtoFromEntity(TaxonomyEntity taxonomyEntity) {
+        final var metadataDto = createEmptyDto(taxonomyEntity.getPublicId());
+
+        taxonomyEntity.getCompetenceAims().stream()
+                .map(CompetenceAim::getCode)
+                .map(MetadataDto.CompetenceAim::new)
+                .forEach(metadataDto::addCompetenceAim);
+
+        metadataDto.setVisible(taxonomyEntity.isVisible());
+
+        return metadataDto;
+    }
+
     @Override
     @Transactional(propagation = REQUIRED)
     public MetadataDto getMetadataForTaxonomyEntity(String publicId) throws InvalidPublicIdException {
         publicIdValidator.validatePublicId(publicId);
 
-        final var metadataDto = new MetadataDto(publicId);
+        return taxonomyEntityService.getTaxonomyEntity(publicId)
+                .map(this::populateDtoFromEntity)
+                .orElseGet(() -> createEmptyDto(publicId));
+    }
 
-        taxonomyEntityService.getTaxonomyEntity(publicId).stream()
-                .map(TaxonomyEntity::getCompetenceAims)
-                .flatMap(Collection::stream)
-                .map(CompetenceAim::getCode)
-                .map(MetadataDto.CompetenceAim::new)
-                .forEach(metadataDto::addCompetenceAim);
+    @Override
+    public List<MetadataDto> getMetadataForTaxonomyEntities(Collection<String> publicIds) throws InvalidPublicIdException {
+        for (String publicId : publicIds) {
+            publicIdValidator.validatePublicId(publicId);
+        }
 
-        metadataDto.populateEmpty();
+        final var entitiesToReturn = new ConcurrentHashMap<String, MetadataDto>();
 
-        return metadataDto;
+        taxonomyEntityService
+                .getTaxonomyEntities(publicIds)
+                .forEach(entity -> entitiesToReturn.put(entity.getPublicId(), populateDtoFromEntity(entity)));
+
+        // Returns 1:1 from provided publicId list of DTOs either populated from entity or empty default DTO
+        return publicIds.parallelStream()
+                .map(publicId -> entitiesToReturn.computeIfAbsent(publicId, this::createEmptyDto))
+                .collect(Collectors.toList());
     }
 
     private void mergeCompetenceAims(TaxonomyEntity taxonomyEntity, Set<MetadataDto.CompetenceAim> competenceAims) {
@@ -77,6 +107,10 @@ public class MetadataAggregatorServiceImpl implements MetadataAggregatorService 
 
         if (updateDto.getCompetenceAims() != null) {
             mergeCompetenceAims(taxonomyEntity, updateDto.getCompetenceAims());
+        }
+
+        if (updateDto.isVisible() != null) {
+            taxonomyEntity.setVisible(updateDto.isVisible());
         }
 
         taxonomyEntityService.saveTaxonomyEntity(taxonomyEntity);

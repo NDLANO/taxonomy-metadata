@@ -10,10 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 
-import java.net.URI;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -129,6 +128,67 @@ class MetadataControllerTest {
             fail("Expected InvalidRequestException");
         } catch (InvalidRequestException ignored) {
 
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void getMultiple() throws InvalidPublicIdException {
+        {
+            final var toReturn = mock(List.class);
+
+            when(metadataAggregatorService.getMetadataForTaxonomyEntities(any(Collection.class))).thenAnswer(invocationOnMock -> {
+                final var requested = (Collection<String>) invocationOnMock.getArgument(0, Collection.class);
+
+                assertEquals(3, requested.size());
+                assertTrue(requested.containsAll(Set.of("urn:test:1", "urn:test:2", "urn:test:3")));
+
+                return toReturn;
+            });
+
+            final var returned = metadataController.getMultiple("urn:test:1,urn:test:2,urn:test:3");
+            assertSame(toReturn, returned);
+
+            reset(metadataAggregatorService);
+        }
+
+        {
+            final var idListBuilder = new StringBuilder();
+            for (var i = 0; i < 101; i++) {
+                if (i > 0) {
+                    idListBuilder.append(",");
+                }
+
+                idListBuilder.append("urn:test:");
+                idListBuilder.append(i);
+            }
+
+            try {
+                metadataController.getMultiple(idListBuilder.toString());
+                fail("Expected InvalidRequestException");
+            } catch (InvalidRequestException ignored) {
+
+            }
+        }
+
+        {
+            try {
+                final var returned = metadataController.getMultiple("");
+                assertEquals(0, returned.size());
+            } catch (InvalidRequestException ignored) {
+
+            }
+        }
+
+        {
+            when(metadataAggregatorService.getMetadataForTaxonomyEntities(any(Collection.class))).thenThrow(new InvalidPublicIdException(""));
+
+            try {
+                metadataController.getMultiple("urn:test:1");
+                fail("Expected InvalidRequestException");
+            } catch (InvalidRequestException exception) {
+                assertTrue(exception.getCause() instanceof InvalidPublicIdException);
+            }
         }
     }
 }

@@ -29,14 +29,26 @@
     <changeSet id="20200212 create taxonomy_entity_competence_aim table" author="jon-eirik.pettersen@cerpus.com">
         <createTable tableName="taxonomy_entity_competence_aim">
             <column name="taxonomy_entity_id" type="uuid"><constraints nullable="false" /></column>
-            <column name="competence_aim_id" type="uuid"><constraints nullable="false" /></column>
+            <column name="competence_aim_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
 
-        <addPrimaryKey tableName="taxonomy_entity_competence_aim" columnNames="taxonomy_entity_id,competence_aim_id" />
+        <addPrimaryKey tableName="taxonomy_entity_competence_aim" columnNames="taxonomy_entity_id,competence_aim_id"/>
 
-        <addForeignKeyConstraint baseTableName="taxonomy_entity_competence_aim" baseColumnNames="taxonomy_entity_id" constraintName="fk_taxonomy_entity_competence_aim_entity_id"
-                                 referencedTableName="taxonomy_entity" referencedColumnNames="id" />
-        <addForeignKeyConstraint baseTableName="taxonomy_entity_competence_aim" baseColumnNames="competence_aim_id" constraintName="fk_taxonomy_entity_competence_aim_competence_aim_id"
-                                 referencedTableName="competence_aim" referencedColumnNames="id" />
+        <addForeignKeyConstraint baseTableName="taxonomy_entity_competence_aim" baseColumnNames="taxonomy_entity_id"
+                                 constraintName="fk_taxonomy_entity_competence_aim_entity_id"
+                                 referencedTableName="taxonomy_entity" referencedColumnNames="id"/>
+        <addForeignKeyConstraint baseTableName="taxonomy_entity_competence_aim" baseColumnNames="competence_aim_id"
+                                 constraintName="fk_taxonomy_entity_competence_aim_competence_aim_id"
+                                 referencedTableName="competence_aim" referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="20200410 add visible flag to taxonomy_entity" author="jon-eirik.pettersen@cerpus.com">
+        <addColumn tableName="taxonomy_entity">
+            <column name="visible" type="boolean" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>

@@ -5,6 +5,8 @@ import no.ndla.taxnomy.metadataapi.data.repository.TaxonomyEntityRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import static org.springframework.transaction.annotation.Propagation.MANDATORY;
@@ -21,6 +23,15 @@ public class TaxonomyEntityServiceImpl implements TaxonomyEntityService {
     @Transactional(propagation = MANDATORY)
     public Optional<TaxonomyEntity> getTaxonomyEntity(String publicId) {
         return taxonomyEntityRepository.findFirstByPublicId(publicId);
+    }
+
+    @Override
+    public List<TaxonomyEntity> getTaxonomyEntities(Collection<String> publicIds) {
+        if (publicIds.size() == 0) {
+            return List.of();
+        }
+
+        return taxonomyEntityRepository.findAllByPublicIdIn(publicIds);
     }
 
     @Override

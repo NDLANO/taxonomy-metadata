@@ -62,4 +62,15 @@ class MetadataDtoTest {
         competenceAim.setCode("TEST");
         assertEquals("TEST", competenceAim.getCode());
     }
+
+    @Test
+    void setAndGetIsVisible() {
+        assertNull(metadataDto.isVisible());
+
+        metadataDto.setVisible(false);
+        assertFalse(metadataDto.isVisible());
+
+        metadataDto.setVisible(true);
+        assertTrue(metadataDto.isVisible());
+    }
 }
