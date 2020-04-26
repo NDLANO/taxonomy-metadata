@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNull;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 @Service
@@ -37,10 +38,12 @@ public class MetadataAggregatorServiceImpl implements MetadataAggregatorService 
     private MetadataDto populateDtoFromEntity(TaxonomyEntity taxonomyEntity) {
         final var metadataDto = createEmptyDto(taxonomyEntity.getPublicId());
 
-        taxonomyEntity.getCompetenceAims().stream()
-                .map(CompetenceAim::getCode)
-                .map(MetadataDto.CompetenceAim::new)
-                .forEach(metadataDto::addCompetenceAim);
+        metadataDto.setCompetenceAims(
+                taxonomyEntity.getCompetenceAims().stream()
+                        .map(CompetenceAim::getCode)
+                        .map(MetadataDto.CompetenceAim::new)
+                        .collect(Collectors.toSet())
+        );
 
         metadataDto.setVisible(taxonomyEntity.isVisible());
 
@@ -100,11 +103,7 @@ public class MetadataAggregatorServiceImpl implements MetadataAggregatorService 
                 .forEach(taxonomyEntity::removeCompetenceAim);
     }
 
-    @Override
-    @Transactional(propagation = REQUIRED)
-    public MetadataDto updateMetadataForTaxonomyEntity(String publicId, MetadataDto updateDto) throws InvalidPublicIdException {
-        final var taxonomyEntity = taxonomyEntityService.getOrCreateTaxonomyEntity(publicId);
-
+    private void mergeEntity(TaxonomyEntity taxonomyEntity, MetadataDto updateDto) {
         if (updateDto.getCompetenceAims() != null) {
             mergeCompetenceAims(taxonomyEntity, updateDto.getCompetenceAims());
         }
@@ -112,10 +111,47 @@ public class MetadataAggregatorServiceImpl implements MetadataAggregatorService 
         if (updateDto.isVisible() != null) {
             taxonomyEntity.setVisible(updateDto.isVisible());
         }
+    }
+
+    @Override
+    @Transactional(propagation = REQUIRED)
+    public MetadataDto updateMetadataForTaxonomyEntity(String publicId, MetadataDto updateDto) throws InvalidPublicIdException {
+        final var taxonomyEntity = taxonomyEntityService.getOrCreateTaxonomyEntity(publicId);
+
+        mergeEntity(taxonomyEntity, updateDto);
 
         taxonomyEntityService.saveTaxonomyEntity(taxonomyEntity);
 
         return getMetadataForTaxonomyEntity(publicId);
+    }
+
+    @Override
+    @Transactional(propagation = REQUIRED)
+    public List<MetadataDto> updateMetadataForTaxonomyEntities(List<MetadataDto> updateDtos) throws InvalidPublicIdException {
+        final var publicIdList = updateDtos.stream()
+                .map(MetadataDto::getPublicId)
+                .collect(Collectors.toList());
+
+        var index = 0;
+        for (final var publicId : publicIdList) {
+            ++index;
+
+            if (publicId == null) {
+                throw new InvalidPublicIdException("Missing publicId on object index " + index);
+            }
+
+            publicIdValidator.validatePublicId(publicId);
+        }
+
+        final var entitiesToUpdate = taxonomyEntityService.getOrCreateTaxonomyEntities(publicIdList)
+                .stream()
+                .collect(Collectors.toMap(TaxonomyEntity::getPublicId, entity -> entity));
+
+        // Applying all the changes requested and persisting the objects
+        updateDtos.forEach(updateDto -> mergeEntity(requireNonNull(entitiesToUpdate.get(updateDto.getPublicId())), updateDto));
+        taxonomyEntityService.saveTaxonomyEntities(entitiesToUpdate.values());
+
+        return getMetadataForTaxonomyEntities(publicIdList);
     }
 
     @Override

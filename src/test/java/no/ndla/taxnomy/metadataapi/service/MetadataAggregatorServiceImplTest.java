@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -110,11 +111,12 @@ class MetadataAggregatorServiceImplTest {
             when(taxonomyEntityService.getOrCreateTaxonomyEntity("urn:test:4001")).thenReturn(taxonomyEntity);
 
             final var requestObject = new MetadataDto("urn:test:4001");
-            requestObject.addCompetenceAim(new MetadataDto.CompetenceAim("K1"));
-            requestObject.addCompetenceAim(new MetadataDto.CompetenceAim("K2"));
-            requestObject.addCompetenceAim(new MetadataDto.CompetenceAim("A1"));
-            requestObject.addCompetenceAim(new MetadataDto.CompetenceAim("A2"));
-
+            requestObject.setCompetenceAims(Set.of(
+                    new MetadataDto.CompetenceAim("K1"),
+                    new MetadataDto.CompetenceAim("K2"),
+                    new MetadataDto.CompetenceAim("A1"),
+                    new MetadataDto.CompetenceAim("A2")
+            ));
             metadataAggregatorService.updateMetadataForTaxonomyEntity("urn:test:4001", requestObject);
 
             verify(taxonomyEntity).addCompetenceAim(aimToAdd1);
@@ -162,8 +164,10 @@ class MetadataAggregatorServiceImplTest {
             when(taxonomyEntityService.getOrCreateTaxonomyEntity("urn:test:4003")).thenReturn(taxonomyEntity);
 
             final var requestObject = new MetadataDto("urn:test:4001");
-            requestObject.addCompetenceAim(new MetadataDto.CompetenceAim("A1"));
-            requestObject.addCompetenceAim(new MetadataDto.CompetenceAim("A2"));
+            requestObject.setCompetenceAims(Set.of(
+                    new MetadataDto.CompetenceAim("A1"),
+                    new MetadataDto.CompetenceAim("A2")
+            ));
 
             metadataAggregatorService.updateMetadataForTaxonomyEntity("urn:test:4003", requestObject);
 
@@ -272,6 +276,130 @@ class MetadataAggregatorServiceImplTest {
                 default:
                     fail("Unexpected publicId");
                     break;
+            }
+        }
+    }
+
+    @Test
+    void updateMetadataForTaxonomyEntities() throws InvalidPublicIdException {
+        final var aim1 = mock(CompetenceAim.class);
+        when(aim1.getCode()).thenReturn("A1");
+        final var aim2 = mock(CompetenceAim.class);
+        when(aim2.getCode()).thenReturn("A2");
+        final var aim3 = mock(CompetenceAim.class);
+        when(aim3.getCode()).thenReturn("A3");
+
+        when(competenceAimService.getOrCreateCompetenceAim("A1")).thenReturn(aim1);
+        when(competenceAimService.getOrCreateCompetenceAim("A2")).thenReturn(aim2);
+        when(competenceAimService.getOrCreateCompetenceAim("A3")).thenReturn(aim3);
+
+        final var entity1PublicId = randomUUID().toString();
+        final var entity2PublicId = randomUUID().toString();
+        final var entity3PublicId = randomUUID().toString();
+
+        final var entity1 = new TaxonomyEntity();
+        entity1.addCompetenceAim(aim1);
+        entity1.addCompetenceAim(aim2);
+        entity1.setVisible(false);
+        entity1.setPublicId(entity1PublicId);
+
+        final var entity2 = new TaxonomyEntity();
+        entity2.addCompetenceAim(aim2);
+        entity2.setVisible(false);
+        entity2.setPublicId(entity2PublicId);
+
+        final var entity3 = new TaxonomyEntity();
+        entity3.addCompetenceAim(aim3);
+        entity3.setVisible(true);
+        entity3.setPublicId(entity3PublicId);
+
+        when(taxonomyEntityService.getTaxonomyEntities(anyCollection())).thenAnswer(invocationOnMock -> {
+            @SuppressWarnings("unchecked") final var requestedPublicIds = (Collection<String>) invocationOnMock.getArgument(0);
+
+            return requestedPublicIds.stream()
+                    .map(publicId -> {
+                        if (publicId.equals(entity1PublicId)) {
+                            return entity1;
+                        } else if (publicId.equals(entity2PublicId)) {
+                            return entity2;
+                        } else if (publicId.equals(entity3PublicId)) {
+                            return entity3;
+                        }
+
+                        throw new RuntimeException("Unknown test entity publicId (failure in test!)");
+                    }).collect(Collectors.toList());
+        });
+
+        when(taxonomyEntityService.getOrCreateTaxonomyEntities(anyCollection())).thenAnswer(invocationOnMock -> {
+            @SuppressWarnings("unchecked") final var requestedPublicIds = (Collection<String>) invocationOnMock.getArgument(0);
+
+            return requestedPublicIds.stream()
+                    .map(publicId -> {
+                        if (publicId.equals(entity1PublicId)) {
+                            return entity1;
+                        } else if (publicId.equals(entity2PublicId)) {
+                            return entity2;
+                        } else if (publicId.equals(entity3PublicId)) {
+                            return entity3;
+                        }
+
+                        throw new RuntimeException("Unknown test entity publicId (failure in test!)");
+                    }).collect(Collectors.toList());
+        });
+
+        {
+            final var update1 = new MetadataDto();
+            update1.setPublicId(entity1PublicId);
+            update1.setVisible(false);
+            update1.setCompetenceAims(
+                    Set.of(new MetadataDto.CompetenceAim("A1"), new MetadataDto.CompetenceAim("A3"))
+            );
+
+            final var update2 = new MetadataDto();
+            update2.setPublicId(entity2PublicId);
+            update2.setCompetenceAims(Set.of());
+            update2.setVisible(true);
+
+            final var update3 = new MetadataDto();
+            update3.setPublicId(entity3PublicId);
+            update3.setVisible(true);
+
+            final var returnedDtos = metadataAggregatorService.updateMetadataForTaxonomyEntities(List.of(update1, update2, update3));
+
+            assertTrue(entity1.getCompetenceAims().containsAll(Set.of(aim1, aim3)));
+            assertEquals(2, entity1.getCompetenceAims().size());
+            assertFalse(entity1.isVisible());
+
+            // Overwritten with empty list of objects
+            assertEquals(0, entity2.getCompetenceAims().size());
+            assertTrue(entity2.isVisible());
+
+            // Not overwriting since the request DTO does not contain elements (is null)
+            assertEquals(1, entity3.getCompetenceAims().size());
+            assertTrue(entity3.getCompetenceAims().contains(aim3));
+            assertTrue(entity3.isVisible());
+
+            assertEquals(3, returnedDtos.size());
+            assertTrue(returnedDtos.stream().map(MetadataDto::getPublicId).collect(Collectors.toSet()).containsAll(Set.of(entity1PublicId, entity2PublicId, entity3PublicId)));
+
+            verify(publicIdValidator, atLeastOnce()).validatePublicId(entity1PublicId);
+            verify(publicIdValidator, atLeastOnce()).validatePublicId(entity2PublicId);
+            verify(publicIdValidator, atLeastOnce()).validatePublicId(entity3PublicId);
+        }
+
+        // Try update with a request DTO without publicId
+        {
+            final var update1 = new MetadataDto();
+            update1.setVisible(false);
+            update1.setCompetenceAims(
+                    Set.of(new MetadataDto.CompetenceAim("A1"), new MetadataDto.CompetenceAim("A3"))
+            );
+
+            try {
+                metadataAggregatorService.updateMetadataForTaxonomyEntities(List.of(update1));
+                fail("Expected InvalidPublicIdException");
+            } catch (InvalidPublicIdException ignored) {
+
             }
         }
     }
