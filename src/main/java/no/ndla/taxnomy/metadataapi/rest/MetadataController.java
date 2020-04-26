@@ -53,17 +53,26 @@ public class MetadataController {
     }
 
     @PutMapping("/{publicId}")
-    public ResponseEntity<MetadataDto> put(@PathVariable String publicId, @RequestBody @Valid MetadataDto requestMetadataDto, BindingResult bindingResult) {
+    public MetadataDto put(@PathVariable String publicId, @RequestBody @Valid MetadataDto requestMetadataDto, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult.getErrorCount() + " errors in provided body, first error: " + bindingResult.getAllErrors().get(0));
         }
 
         try {
-            final var metadataDto = metadataAggregatorService.updateMetadataForTaxonomyEntity(publicId, requestMetadataDto);
+            return metadataAggregatorService.updateMetadataForTaxonomyEntity(publicId, requestMetadataDto);
+        } catch (InvalidPublicIdException e) {
+            throw new InvalidRequestException(e);
+        }
+    }
 
-            return ResponseEntity
-                    .ok()
-                    .body(metadataDto);
+    @PutMapping("/")
+    public List<MetadataDto> putBulk(@RequestBody @Valid MetadataDto[] requestMetadataDtos, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new InvalidRequestException(bindingResult.getErrorCount() + " errors in provided body, first error: " + bindingResult.getAllErrors().get(0));
+        }
+
+        try {
+            return metadataAggregatorService.updateMetadataForTaxonomyEntities(Arrays.asList(requestMetadataDtos));
         } catch (InvalidPublicIdException e) {
             throw new InvalidRequestException(e);
         }

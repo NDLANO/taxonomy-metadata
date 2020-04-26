@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.springframework.transaction.annotation.Propagation.MANDATORY;
 
@@ -31,23 +32,50 @@ public class TaxonomyEntityServiceImpl implements TaxonomyEntityService {
             return List.of();
         }
 
-        return taxonomyEntityRepository.findAllByPublicIdIn(publicIds);
+        return taxonomyEntityRepository.findAllByPublicIdInIncludingCompetenceAims(publicIds);
+    }
+
+    private TaxonomyEntity createEmptyTaxonomyEntity(String publicId) {
+        final var taxonomyNode = new TaxonomyEntity();
+        taxonomyNode.setPublicId(publicId);
+        return taxonomyNode;
     }
 
     @Override
     @Transactional(propagation = MANDATORY)
     public TaxonomyEntity getOrCreateTaxonomyEntity(String publicId) {
-        return taxonomyEntityRepository.findFirstByPublicId(publicId).orElseGet(() -> {
-            final var taxonomyNode = new TaxonomyEntity();
-            taxonomyNode.setPublicId(publicId);
-            return taxonomyEntityRepository.saveAndFlush(taxonomyNode);
-        });
+        return taxonomyEntityRepository.findFirstByPublicId(publicId).orElseGet(() -> taxonomyEntityRepository.saveAndFlush(createEmptyTaxonomyEntity(publicId)));
+    }
+
+    @Override
+    @Transactional(propagation = MANDATORY)
+    public List<TaxonomyEntity> getOrCreateTaxonomyEntities(Collection<String> publicIds) {
+        if (publicIds.size() == 0) {
+            return List.of();
+        }
+
+        final var existingEntities = getTaxonomyEntities(publicIds)
+                .stream()
+                .collect(Collectors.toMap(TaxonomyEntity::getPublicId, taxonomyEntity -> taxonomyEntity));
+
+        final var entitiesToReturn = publicIds.stream()
+                .map(publicId -> existingEntities.computeIfAbsent(publicId, this::createEmptyTaxonomyEntity))
+                .collect(Collectors.toList());
+
+        return taxonomyEntityRepository.saveAll(entitiesToReturn);
     }
 
     @Override
     @Transactional(propagation = MANDATORY)
     public void saveTaxonomyEntity(TaxonomyEntity taxonomyEntity) {
         taxonomyEntityRepository.saveAndFlush(taxonomyEntity);
+    }
+
+    @Override
+    @Transactional(propagation = MANDATORY)
+    public void saveTaxonomyEntities(Collection<TaxonomyEntity> taxonomyEntities) {
+        taxonomyEntityRepository.saveAll(taxonomyEntities);
+        taxonomyEntityRepository.flush();
     }
 
     @Override

@@ -23,7 +23,8 @@ public class TaxonomyEntity {
     @CreationTimestamp
     private Instant createdAt;
 
-    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @SuppressWarnings("JpaDataSourceORMInspection")
+    @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(name = "taxonomy_entity_competence_aim",
             joinColumns = @JoinColumn(name = "taxonomy_entity_id"),
             inverseJoinColumns = @JoinColumn(name = "competence_aim_id")

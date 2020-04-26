@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -166,5 +167,53 @@ class TaxonomyEntityServiceImplTest {
         final var returned3 = taxonomyEntityService.getTaxonomyEntities(Set.of("urn:test:1", "urn:test:4"));
         assertEquals(1, returned3.size());
         assertTrue(returned3.contains(entity1));
+    }
+
+    @Test
+    @Transactional
+    void getOrCreateTaxonomyEntities() {
+        final var existingEntityToCreate = new TaxonomyEntity();
+        existingEntityToCreate.setPublicId("urn:test:2002");
+        existingEntityToCreate.setVisible(false);
+        final var existingEntity = taxonomyEntityRepository.saveAndFlush(existingEntityToCreate);
+
+        // Should create urn:test:2001, but return existing urn:test:2002
+        final var taxonomyEntities = taxonomyEntityService.getOrCreateTaxonomyEntities(List.of("urn:test:2001", "urn:test:2002"));
+
+        // Returned list is ordered the same order as received (when ordered)
+        final var returnedEntity1 = taxonomyEntities.get(0);
+        final var returnedEntity2 = taxonomyEntities.get(1);
+
+        assertSame(returnedEntity2, existingEntity);
+        assertEquals("urn:test:2002", returnedEntity2.getPublicId());
+        assertEquals(0, returnedEntity2.getCompetenceAims().size());
+        assertFalse(returnedEntity2.isVisible());
+
+        assertEquals("urn:test:2001", returnedEntity1.getPublicId());
+        assertEquals(0, returnedEntity1.getCompetenceAims().size());
+        assertTrue(returnedEntity1.isVisible());
+        assertSame(returnedEntity1, taxonomyEntityRepository.findFirstByPublicId("urn:test:2001").orElseThrow());
+    }
+
+    @Test
+    void saveTaxonomyEntities() {
+        final var taxonomyEntity1 = new TaxonomyEntity();
+        taxonomyEntity1.setPublicId("urn:test:2103");
+        final var taxonomyEntity2 = new TaxonomyEntity();
+        taxonomyEntity2.setPublicId("urn:test:2104");
+
+        assertNull(taxonomyEntity1.getId());
+        assertNull(taxonomyEntity2.getId());
+
+        assertFalse(taxonomyEntityRepository.findFirstByPublicId("urn:test:2103").isPresent());
+        assertFalse(taxonomyEntityRepository.findFirstByPublicId("urn:test:2104").isPresent());
+
+        taxonomyEntityService.saveTaxonomyEntities(Set.of(taxonomyEntity1, taxonomyEntity2));
+
+        assertNotNull(taxonomyEntity1.getId());
+        assertNotNull(taxonomyEntity2.getId());
+
+        assertTrue(taxonomyEntityRepository.findFirstByPublicId("urn:test:2103").isPresent());
+        assertTrue(taxonomyEntityRepository.findFirstByPublicId("urn:test:2104").isPresent());
     }
 }

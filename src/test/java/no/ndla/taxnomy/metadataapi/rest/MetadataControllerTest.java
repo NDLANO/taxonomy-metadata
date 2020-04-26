@@ -79,14 +79,10 @@ class MetadataControllerTest {
             final var aim1 = new MetadataDto.CompetenceAim("AIM1");
             final var aim2 = new MetadataDto.CompetenceAim("AIM2");
             final var requestObject = new MetadataDto("urn:test:1");
-            requestObject.addCompetenceAim(aim1);
-            requestObject.addCompetenceAim(aim2);
+            requestObject.setCompetenceAims(Set.of(aim1, aim2));
 
-            final var returnedResponseEntity = metadataController.put("urn:test:1", requestObject, bindingResult);
+            final var returnedMetadataDto = metadataController.put("urn:test:1", requestObject, bindingResult);
 
-            assertEquals(HttpStatus.OK, returnedResponseEntity.getStatusCode());
-
-            final var returnedMetadataDto = returnedResponseEntity.getBody();
             assertEquals("urn:test:1", returnedMetadataDto.getPublicId());
 
             assertTrue(returnedMetadataDto.getCompetenceAims().stream().map(MetadataDto.CompetenceAim::getCode).collect(Collectors.toSet()).containsAll(Set.of("AIM1", "AIM2")));
@@ -188,6 +184,54 @@ class MetadataControllerTest {
                 fail("Expected InvalidRequestException");
             } catch (InvalidRequestException exception) {
                 assertTrue(exception.getCause() instanceof InvalidPublicIdException);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void putBulk() throws InvalidPublicIdException {
+        {
+            final var entity1ToUpdate = mock(MetadataDto.class);
+            final var entity2ToUpdate = mock(MetadataDto.class);
+
+            final var entity1ToReturn = mock(MetadataDto.class);
+            final var entity2ToReturn = mock(MetadataDto.class);
+
+            when(metadataAggregatorService.updateMetadataForTaxonomyEntities(anyList())).thenAnswer(invocationOnMock -> {
+                final var inputObjects = (List<MetadataDto>) invocationOnMock.getArgument(0);
+
+                return inputObjects
+                        .stream()
+                        .map(inputObject -> {
+                            if (inputObject == entity1ToUpdate) {
+                                return entity1ToReturn;
+                            } else if (inputObject == entity2ToUpdate) {
+                                return entity2ToReturn;
+                            }
+
+                            return null;
+                        })
+                        .collect(Collectors.toList());
+            });
+
+            final var returnedObjects = metadataController.putBulk(List.of(entity1ToUpdate, entity2ToUpdate).toArray(new MetadataDto[0]), mock(BindingResult.class));
+
+            assertEquals(2, returnedObjects.size());
+            assertSame(entity1ToReturn, returnedObjects.get(0));
+            assertSame(entity2ToReturn, returnedObjects.get(1));
+        }
+
+        {
+            final var entityToUpdate = mock(MetadataDto.class);
+
+            when(metadataAggregatorService.updateMetadataForTaxonomyEntities(anyList())).thenThrow(new InvalidPublicIdException(""));
+
+            try {
+                metadataController.putBulk(List.of(entityToUpdate).toArray(new MetadataDto[0]), mock(BindingResult.class));
+                fail("Expected InvalidRequestException");
+            } catch (InvalidRequestException e) {
+                assertTrue(e.getCause() instanceof InvalidPublicIdException);
             }
         }
     }

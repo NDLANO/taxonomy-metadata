@@ -3,6 +3,7 @@ package no.ndla.taxnomy.metadataapi.service.dto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,21 +29,19 @@ class MetadataDtoTest {
     }
 
     @Test
-    void addAndGetCompetenceAims() {
+    void setAndGetCompetenceAims() {
         final var aim1 = new MetadataDto.CompetenceAim("TEST1");
         final var aim2 = new MetadataDto.CompetenceAim("TEST2");
 
         assertNull(metadataDto.getCompetenceAims());
 
-        metadataDto.addCompetenceAim(aim1);
+        final var setToSet = new HashSet<>(Set.of(aim1, aim2));
+        metadataDto.setCompetenceAims(setToSet);
 
-        assertEquals(1, metadataDto.getCompetenceAims().size());
-        assertTrue(metadataDto.getCompetenceAims().contains(aim1));
-
-        metadataDto.addCompetenceAim(aim2);
-
+        // Verify contains all objects set, but is not the same object
         assertEquals(2, metadataDto.getCompetenceAims().size());
         assertTrue(metadataDto.getCompetenceAims().containsAll(Set.of(aim1, aim2)));
+        assertNotSame(setToSet, metadataDto.getCompetenceAims());
     }
 
     @Test

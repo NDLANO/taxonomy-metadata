@@ -1,8 +1,5 @@
 package no.ndla.taxnomy.metadataapi.service.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
-
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Pattern;
@@ -32,7 +29,6 @@ public class MetadataDto {
         }
     }
 
-    @JsonProperty(access = Access.READ_ONLY)
     private String publicId;
 
     private Boolean visible;
@@ -52,19 +48,15 @@ public class MetadataDto {
         return competenceAims;
     }
 
-    public void addCompetenceAim(CompetenceAim competenceAim) {
-        if (this.competenceAims == null) {
-            this.competenceAims = new HashSet<>();
-        }
-
-        this.competenceAims.add(competenceAim);
+    public void setCompetenceAims(Set<CompetenceAim> competenceAims) {
+        this.competenceAims = Set.copyOf(competenceAims);
     }
 
     public MetadataDto(String publicId) {
         this.publicId = publicId;
     }
 
-    MetadataDto() {
+    public MetadataDto() {
 
     }
 

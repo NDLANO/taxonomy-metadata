@@ -13,7 +13,11 @@ public interface TaxonomyEntityService {
 
     TaxonomyEntity getOrCreateTaxonomyEntity(String publicId);
 
+    List<TaxonomyEntity> getOrCreateTaxonomyEntities(Collection<String> publicId);
+
     void saveTaxonomyEntity(TaxonomyEntity taxonomyEntity);
+
+    void saveTaxonomyEntities(Collection<TaxonomyEntity> taxonomyEntities);
 
     void deleteTaxonomyEntity(String publicId);
 }
