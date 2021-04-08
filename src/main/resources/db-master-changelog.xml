@@ -51,4 +51,32 @@
             </column>
         </addColumn>
     </changeSet>
+
+    <changeSet id="20210408 create custom field table" author="jan.espen.oversand@cerpus.com">
+        <createTable tableName="custom_field">
+            <column name="id" type="uuid"><constraints primaryKey="true" nullable="false" /></column>
+            <column name="public_id" type="varchar(100)"><constraints unique="true" uniqueConstraintName="unique_taxonomy_custom_fields_public_id" nullable="false" /></column>
+            <column name="created_at" type="datetime"><constraints nullable="false" /></column>
+            <column name="updated_at" type="datetime" />
+            <column name="key" type="varchar(100)"><constraints unique="true" uniqueConstraintName="unique_taxonomy_custom_fields_key" nullable="false" /></column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="20210408 create custom field value table" author="jan.espen.oversand@cerpus.com">
+        <createTable tableName="custom_field_value">
+            <column name="id" type="uuid"><constraints primaryKey="true" nullable="false" /></column>
+            <column name="taxonomy_entity_id" type="uuid"><constraints nullable="false" /></column>
+            <column name="custom_field_id" type="uuid"><constraints nullable="false" /></column>
+            <column name="value" type="text"/>
+        </createTable>
+
+        <addUniqueConstraint constraintName="unique_taxonomy_entity_id_custom_field_value" tableName="custom_field_value" columnNames="taxonomy_entity_id,custom_field_id"/>
+
+        <addForeignKeyConstraint baseTableName="custom_field_value" baseColumnNames="taxonomy_entity_id"
+                                 constraintName="fk_taxonomy_entity_custom_field_value_id"
+                                 referencedTableName="taxonomy_entity" referencedColumnNames="id"/>
+        <addForeignKeyConstraint baseTableName="custom_field_value" baseColumnNames="custom_field_id"
+                                 constraintName="fk_custom_field_custom_field_value_id"
+                                 referencedTableName="custom_field" referencedColumnNames="id"/>
+    </changeSet>
 </databaseChangeLog>
