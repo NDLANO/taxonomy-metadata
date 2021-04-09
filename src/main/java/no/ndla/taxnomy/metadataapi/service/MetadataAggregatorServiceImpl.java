@@ -72,6 +72,7 @@ public class MetadataAggregatorServiceImpl implements MetadataAggregatorService 
     }
 
     @Override
+    @Transactional(propagation = REQUIRED)
     public List<MetadataDto> getMetadataForTaxonomyEntities(Collection<String> publicIds) throws InvalidPublicIdException {
         for (String publicId : publicIds) {
             publicIdValidator.validatePublicId(publicId);
