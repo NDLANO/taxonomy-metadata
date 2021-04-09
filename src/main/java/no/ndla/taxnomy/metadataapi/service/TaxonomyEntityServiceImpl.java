@@ -67,8 +67,8 @@ public class TaxonomyEntityServiceImpl implements TaxonomyEntityService {
 
     @Override
     @Transactional(propagation = MANDATORY)
-    public void saveTaxonomyEntity(TaxonomyEntity taxonomyEntity) {
-        taxonomyEntityRepository.saveAndFlush(taxonomyEntity);
+    public TaxonomyEntity saveTaxonomyEntity(TaxonomyEntity taxonomyEntity) {
+        return taxonomyEntityRepository.saveAndFlush(taxonomyEntity);
     }
 
     @Override

@@ -3,6 +3,7 @@ package no.ndla.taxnomy.metadataapi.rest;
 import no.ndla.taxnomy.metadataapi.rest.exception.InvalidRequestException;
 import no.ndla.taxnomy.metadataapi.service.MetadataAggregatorService;
 import no.ndla.taxnomy.metadataapi.service.dto.MetadataDto;
+import no.ndla.taxnomy.metadataapi.service.exception.InvalidDataException;
 import no.ndla.taxnomy.metadataapi.service.exception.InvalidPublicIdException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -60,7 +61,7 @@ public class MetadataController {
 
         try {
             return metadataAggregatorService.updateMetadataForTaxonomyEntity(publicId, requestMetadataDto);
-        } catch (InvalidPublicIdException e) {
+        } catch (InvalidDataException | InvalidPublicIdException e) {
             throw new InvalidRequestException(e);
         }
     }
@@ -73,7 +74,7 @@ public class MetadataController {
 
         try {
             return metadataAggregatorService.updateMetadataForTaxonomyEntities(Arrays.asList(requestMetadataDtos));
-        } catch (InvalidPublicIdException e) {
+        } catch (InvalidDataException | InvalidPublicIdException e) {
             throw new InvalidRequestException(e);
         }
     }

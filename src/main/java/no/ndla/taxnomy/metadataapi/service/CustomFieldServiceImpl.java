@@ -55,7 +55,7 @@ public class CustomFieldServiceImpl implements CustomFieldService {
         customFieldValueRepository.delete(customFieldValueRepository.findById(id).orElseThrow(() -> new EntityNotFoundException(id)));
     }
 
-    class FieldValueImpl implements FieldValue {
+    static class FieldValueImpl implements FieldValue {
         private UUID id;
         private String value;
 
