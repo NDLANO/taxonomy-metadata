@@ -114,4 +114,48 @@ public class CustomFieldServiceImplTest {
         final var id = UUID.randomUUID();
         assertThrows(EntityNotFoundException.class, () -> {customFieldService.unsetCustomField(id); });
     }
+
+    @Test
+    public void testGetByKeyValueKeyNotFound() {
+        assertTrue(customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue("testkey", "testvalue").isEmpty());
+    }
+
+    @Test
+    public void testGetByKeyValueNoValues() {
+        CustomField customField = new CustomField();
+        customField.setPublicId("urn:customfield:1");
+        customField.setKey("testkey");
+        customField = customFieldRepository.save(customField);
+        assertTrue(customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue("testkey", "testvalue").isEmpty());
+    }
+
+    @Test
+    public void testGetByKeyValue() {
+        {
+            CustomField customField = new CustomField();
+            customField.setPublicId("urn:customfield:1");
+            customField.setKey("testkey");
+            customField = customFieldRepository.save(customField);
+            TaxonomyEntity taxonomyEntity = new TaxonomyEntity();
+            taxonomyEntity.setPublicId("urn:test:1");
+            taxonomyEntity = taxonomyEntityRepository.save(taxonomyEntity);
+            {
+                CustomFieldValue customFieldValue = new CustomFieldValue();
+                customFieldValue.setCustomField(customField);
+                customFieldValue.setTaxonomyEntity(taxonomyEntity);
+                customFieldValue.setValue("testvalue");
+                customFieldValueRepository.save(customFieldValue);
+            }
+        }
+        final var entities = customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue("testkey", "testvalue");
+        assertFalse(entities.isEmpty());
+        final TaxonomyEntity taxonomyEntity;
+        {
+            final var iterator = entities.iterator();
+            assertTrue(iterator.hasNext());
+            taxonomyEntity = iterator.next();
+            assertFalse(iterator.hasNext());
+        }
+        assertEquals("urn:test:1", taxonomyEntity.getPublicId().toString());
+    }
 }

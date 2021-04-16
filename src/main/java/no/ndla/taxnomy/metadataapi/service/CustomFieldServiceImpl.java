@@ -9,6 +9,7 @@ import no.ndla.taxnomy.metadataapi.service.exception.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -53,6 +54,25 @@ public class CustomFieldServiceImpl implements CustomFieldService {
     @Override
     public void unsetCustomField(UUID id) throws EntityNotFoundException {
         customFieldValueRepository.delete(customFieldValueRepository.findById(id).orElseThrow(() -> new EntityNotFoundException(id)));
+    }
+
+    @Override
+    public List<TaxonomyEntity> getTaxonomyEntitiesByCustomFieldKeyValue(String key, String value) {
+        final UUID customFieldId;
+        {
+            final CustomField customField;
+            {
+                final var opt = customFieldRepository.findByKey(key);
+                if (opt.isEmpty()) {
+                    return List.of();
+                }
+                customField = opt.get();
+            }
+            customFieldId = customField.getId();
+        }
+        return StreamSupport.stream(customFieldValueRepository.findAllByCustomFieldAndValue(customFieldId, value).spliterator(), false)
+                .map(CustomFieldValue::getTaxonomyEntity)
+                .collect(Collectors.toList());
     }
 
     static class FieldValueImpl implements FieldValue {
