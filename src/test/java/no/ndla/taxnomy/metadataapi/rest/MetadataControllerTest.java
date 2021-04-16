@@ -187,6 +187,18 @@ class MetadataControllerTest {
                 assertTrue(exception.getCause() instanceof InvalidPublicIdException);
             }
         }
+
+        {
+            when(metadataAggregatorService.getMetadataForTaxonomyEntities(any(Collection.class))).thenThrow(new InvalidPublicIdException(""));
+
+            try {
+                metadataController.getMultiple(null);
+                fail("Expected InvalidRequestException");
+            } catch (InvalidRequestException exception) {
+            } catch (NullPointerException exception) {
+                fail("NullPointerException crash");
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

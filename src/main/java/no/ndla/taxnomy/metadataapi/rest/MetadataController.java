@@ -27,7 +27,9 @@ public class MetadataController {
     public List<MetadataDto> getMultiple(@RequestParam String publicIds) {
         // Read comma separated list of unique publicIds in query parameter
 
-        if (publicIds.length() == 0) {
+        if (publicIds == null) {
+            throw new InvalidRequestException("Query publicIds not specified");
+        } else if (publicIds.length() == 0) {
             return List.of();
         }
 
