@@ -3,6 +3,7 @@ package no.ndla.taxnomy.metadataapi.rest;
 import no.ndla.taxnomy.metadataapi.rest.exception.InvalidRequestException;
 import no.ndla.taxnomy.metadataapi.service.MetadataAggregatorService;
 import no.ndla.taxnomy.metadataapi.service.dto.MetadataDto;
+import no.ndla.taxnomy.metadataapi.service.exception.InvalidDataException;
 import no.ndla.taxnomy.metadataapi.service.exception.InvalidPublicIdException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,7 +58,7 @@ class MetadataControllerTest {
     }
 
     @Test
-    void put() throws InvalidPublicIdException {
+    void put() throws InvalidPublicIdException, InvalidDataException {
         {
             final var metadataDtoToReturn = mock(MetadataDto.class);
             when(metadataDtoToReturn.getPublicId()).thenReturn("urn:test:1");
@@ -190,7 +191,7 @@ class MetadataControllerTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void putBulk() throws InvalidPublicIdException {
+    void putBulk() throws InvalidPublicIdException, InvalidDataException {
         {
             final var entity1ToUpdate = mock(MetadataDto.class);
             final var entity2ToUpdate = mock(MetadataDto.class);

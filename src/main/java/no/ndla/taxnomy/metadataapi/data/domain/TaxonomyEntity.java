@@ -31,6 +31,12 @@ public class TaxonomyEntity {
     )
     private Set<CompetenceAim> competenceAims = new HashSet<>();
 
+    // JPA will delete custom field values automatically if they are removed from this set and this entity persisted.
+    // This is for the @PreRemoval to take effect and automatically remove values when this entity is deleted
+    // - makes sense - right? otherwise service level code would have to always delete values before deleting this.
+    @OneToMany(cascade = {CascadeType.REMOVE, CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, orphanRemoval = true, mappedBy = "taxonomyEntity")
+    private Set<CustomFieldValue> customFieldValues;
+
     @Column
     private boolean visible = true;
 
@@ -77,6 +83,9 @@ public class TaxonomyEntity {
     void preRemove() {
         // De-links the competence aims before removal (but keeps the competence aim entities)
         Set.copyOf(this.competenceAims).forEach(this::removeCompetenceAim);
+        if (customFieldValues != null) {
+            customFieldValues.clear();
+        }
     }
 
     public boolean isVisible() {

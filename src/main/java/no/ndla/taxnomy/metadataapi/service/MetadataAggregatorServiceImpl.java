@@ -3,13 +3,17 @@ package no.ndla.taxnomy.metadataapi.service;
 import no.ndla.taxnomy.metadataapi.data.domain.CompetenceAim;
 import no.ndla.taxnomy.metadataapi.data.domain.TaxonomyEntity;
 import no.ndla.taxnomy.metadataapi.service.dto.MetadataDto;
+import no.ndla.taxnomy.metadataapi.service.exception.EntityNotFoundException;
+import no.ndla.taxnomy.metadataapi.service.exception.InvalidDataException;
 import no.ndla.taxnomy.metadataapi.service.exception.InvalidPublicIdException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -20,11 +24,13 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 public class MetadataAggregatorServiceImpl implements MetadataAggregatorService {
     private final TaxonomyEntityService taxonomyEntityService;
     private final CompetenceAimService competenceAimService;
+    private final CustomFieldService customFieldService;
     private final PublicIdValidator publicIdValidator;
 
-    public MetadataAggregatorServiceImpl(TaxonomyEntityService taxonomyEntityService, CompetenceAimService competenceAimService, PublicIdValidator publicIdValidator) {
+    public MetadataAggregatorServiceImpl(TaxonomyEntityService taxonomyEntityService, CompetenceAimService competenceAimService, CustomFieldService customFieldService, PublicIdValidator publicIdValidator) {
         this.taxonomyEntityService = taxonomyEntityService;
         this.competenceAimService = competenceAimService;
+        this.customFieldService = customFieldService;
         this.publicIdValidator = publicIdValidator;
     }
 
@@ -47,6 +53,11 @@ public class MetadataAggregatorServiceImpl implements MetadataAggregatorService 
 
         metadataDto.setVisible(taxonomyEntity.isVisible());
 
+        metadataDto.setCustomFields(
+                customFieldService.getCustomFields(taxonomyEntity).entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()))
+        );
+
         return metadataDto;
     }
 
@@ -61,6 +72,7 @@ public class MetadataAggregatorServiceImpl implements MetadataAggregatorService 
     }
 
     @Override
+    @Transactional(propagation = REQUIRED)
     public List<MetadataDto> getMetadataForTaxonomyEntities(Collection<String> publicIds) throws InvalidPublicIdException {
         for (String publicId : publicIds) {
             publicIdValidator.validatePublicId(publicId);
@@ -113,21 +125,76 @@ public class MetadataAggregatorServiceImpl implements MetadataAggregatorService 
         }
     }
 
+    private void updateCustomFields(final TaxonomyEntity taxonomyEntity, final MetadataDto updateDto) throws InvalidDataException {
+        final var customFieldMap = updateDto.getCustomFields();
+        if (customFieldMap != null) {
+            try {
+                final var existingFields = customFieldService.getCustomFields(taxonomyEntity);
+                final var removeFields = existingFields.entrySet().stream()
+                        .filter(entry -> !customFieldMap.containsKey(entry.getKey()))
+                        .map(Map.Entry::getValue)
+                        .map(CustomFieldService.FieldValue::getId);
+                final var setFields = customFieldMap.entrySet().stream()
+                        .filter(entry -> {
+                            final var existing = existingFields.get(entry.getKey());
+                            if (existing == null) {
+                                return true;
+                            }
+                            final var existingValue = existing.getValue();
+                            if (existingValue == null) {
+                                return entry.getValue() != null;
+                            }
+                            return !existingValue.equals(entry.getValue());
+                        })
+                        .collect(Collectors.toMap(
+                                entry -> {
+                                    final var key = entry.getKey();
+                                    if (key == null) {
+                                        throw new CompletionException(new InvalidDataException("Null key for key/value data"));
+                                    }
+                                    return key;
+                                }, entry -> {
+                                    final var value = entry.getValue();
+                                    if (value == null) {
+                                        throw new CompletionException(new InvalidDataException("Null value for key/value data"));
+                                    }
+                                    return value;
+                                }));
+                setFields.forEach((key, value) -> customFieldService.setCustomField(taxonomyEntity, key, value));
+                removeFields.forEach(id -> {
+                    try {
+                        customFieldService.unsetCustomField(id);
+                    } catch (EntityNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            } catch (CompletionException e) {
+                final var cause = e.getCause();
+                if (cause instanceof InvalidDataException) {
+                    throw (InvalidDataException) cause;
+                }
+                throw e;
+            }
+        }
+    }
+
     @Override
     @Transactional(propagation = REQUIRED)
-    public MetadataDto updateMetadataForTaxonomyEntity(String publicId, MetadataDto updateDto) throws InvalidPublicIdException {
-        final var taxonomyEntity = taxonomyEntityService.getOrCreateTaxonomyEntity(publicId);
+    public MetadataDto updateMetadataForTaxonomyEntity(String publicId, MetadataDto updateDto) throws InvalidPublicIdException, InvalidDataException {
+        var taxonomyEntity = taxonomyEntityService.getOrCreateTaxonomyEntity(publicId);
 
         mergeEntity(taxonomyEntity, updateDto);
 
-        taxonomyEntityService.saveTaxonomyEntity(taxonomyEntity);
+        taxonomyEntity = taxonomyEntityService.saveTaxonomyEntity(taxonomyEntity);
+
+        updateCustomFields(taxonomyEntity, updateDto);
 
         return getMetadataForTaxonomyEntity(publicId);
     }
 
     @Override
     @Transactional(propagation = REQUIRED)
-    public List<MetadataDto> updateMetadataForTaxonomyEntities(List<MetadataDto> updateDtos) throws InvalidPublicIdException {
+    public List<MetadataDto> updateMetadataForTaxonomyEntities(List<MetadataDto> updateDtos) throws InvalidPublicIdException, InvalidDataException {
         final var publicIdList = updateDtos.stream()
                 .map(MetadataDto::getPublicId)
                 .collect(Collectors.toList());
@@ -148,8 +215,29 @@ public class MetadataAggregatorServiceImpl implements MetadataAggregatorService 
                 .collect(Collectors.toMap(TaxonomyEntity::getPublicId, entity -> entity));
 
         // Applying all the changes requested and persisting the objects
-        updateDtos.forEach(updateDto -> mergeEntity(requireNonNull(entitiesToUpdate.get(updateDto.getPublicId())), updateDto));
-        taxonomyEntityService.saveTaxonomyEntities(entitiesToUpdate.values());
+        final var save = updateDtos.stream().map(updateDto -> {
+            final var entity = requireNonNull(entitiesToUpdate.get(updateDto.getPublicId()));
+            mergeEntity(entity, updateDto);
+            return Map.entry(updateDto, entity);
+        }).collect(Collectors.toList());
+        try {
+            save.forEach(pair -> {
+                final var updateDto = pair.getKey();
+                var entity = pair.getValue();
+                entity = taxonomyEntityService.saveTaxonomyEntity(entity);
+                try {
+                    updateCustomFields(entity, updateDto);
+                } catch (InvalidDataException e) {
+                    throw new CompletionException(e);
+                }
+            });
+        } catch (CompletionException e) {
+            final var cause = e.getCause();
+            if (cause instanceof InvalidDataException) {
+                throw (InvalidDataException) cause;
+            }
+            throw e;
+        }
 
         return getMetadataForTaxonomyEntities(publicIdList);
     }

@@ -3,7 +3,9 @@ package no.ndla.taxnomy.metadataapi.service.dto;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Pattern;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class MetadataDto {
@@ -36,6 +38,8 @@ public class MetadataDto {
     @Valid
     private Set<CompetenceAim> competenceAims;
 
+    private Map<String,String> customFields;
+
     public String getPublicId() {
         return publicId;
     }
@@ -64,6 +68,9 @@ public class MetadataDto {
         if (this.competenceAims == null) {
             this.competenceAims = new HashSet<>();
         }
+        if (this.customFields == null) {
+            this.customFields = new HashMap<>();
+        }
 
         this.visible = true;
     }
@@ -74,5 +81,13 @@ public class MetadataDto {
 
     public void setVisible(Boolean visible) {
         this.visible = visible;
+    }
+
+    public Map<String, String> getCustomFields() {
+        return customFields;
+    }
+
+    public void setCustomFields(Map<String, String> customFields) {
+        this.customFields = customFields;
     }
 }

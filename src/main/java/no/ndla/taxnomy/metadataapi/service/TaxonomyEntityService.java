@@ -15,7 +15,7 @@ public interface TaxonomyEntityService {
 
     List<TaxonomyEntity> getOrCreateTaxonomyEntities(Collection<String> publicId);
 
-    void saveTaxonomyEntity(TaxonomyEntity taxonomyEntity);
+    TaxonomyEntity saveTaxonomyEntity(TaxonomyEntity taxonomyEntity);
 
     void saveTaxonomyEntities(Collection<TaxonomyEntity> taxonomyEntities);
 
