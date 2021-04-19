@@ -1,6 +1,8 @@
 package no.ndla.taxnomy.metadataapi.rest;
 
+import no.ndla.taxnomy.metadataapi.data.domain.TaxonomyEntity;
 import no.ndla.taxnomy.metadataapi.rest.exception.InvalidRequestException;
+import no.ndla.taxnomy.metadataapi.service.CustomFieldService;
 import no.ndla.taxnomy.metadataapi.service.MetadataAggregatorService;
 import no.ndla.taxnomy.metadataapi.service.dto.MetadataDto;
 import no.ndla.taxnomy.metadataapi.service.exception.InvalidDataException;
@@ -14,7 +16,10 @@ import org.springframework.validation.ObjectError;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,12 +28,14 @@ import static org.mockito.Mockito.*;
 
 class MetadataControllerTest {
     private MetadataAggregatorService metadataAggregatorService;
+    private CustomFieldService customFieldService;
     private MetadataController metadataController;
 
     @BeforeEach
     void setUp() {
         metadataAggregatorService = mock(MetadataAggregatorService.class);
-        metadataController = new MetadataController(metadataAggregatorService);
+        customFieldService = mock(CustomFieldService.class);
+        metadataController = new MetadataController(metadataAggregatorService, customFieldService);
     }
 
     @Test
@@ -143,7 +150,7 @@ class MetadataControllerTest {
                 return toReturn;
             });
 
-            final var returned = metadataController.getMultiple("urn:test:1,urn:test:2,urn:test:3");
+            final var returned = metadataController.getMultiple("urn:test:1,urn:test:2,urn:test:3", null, null);
             assertSame(toReturn, returned);
 
             reset(metadataAggregatorService);
@@ -161,7 +168,7 @@ class MetadataControllerTest {
             }
 
             try {
-                metadataController.getMultiple(idListBuilder.toString());
+                metadataController.getMultiple(idListBuilder.toString(), null, null);
                 fail("Expected InvalidRequestException");
             } catch (InvalidRequestException ignored) {
 
@@ -170,7 +177,7 @@ class MetadataControllerTest {
 
         {
             try {
-                final var returned = metadataController.getMultiple("");
+                final var returned = metadataController.getMultiple("", null, null);
                 assertEquals(0, returned.size());
             } catch (InvalidRequestException ignored) {
 
@@ -181,7 +188,7 @@ class MetadataControllerTest {
             when(metadataAggregatorService.getMetadataForTaxonomyEntities(any(Collection.class))).thenThrow(new InvalidPublicIdException(""));
 
             try {
-                metadataController.getMultiple("urn:test:1");
+                metadataController.getMultiple("urn:test:1", null, null);
                 fail("Expected InvalidRequestException");
             } catch (InvalidRequestException exception) {
                 assertTrue(exception.getCause() instanceof InvalidPublicIdException);
@@ -192,12 +199,61 @@ class MetadataControllerTest {
             when(metadataAggregatorService.getMetadataForTaxonomyEntities(any(Collection.class))).thenThrow(new InvalidPublicIdException(""));
 
             try {
-                metadataController.getMultiple(null);
+                metadataController.getMultiple(null, null, null);
                 fail("Expected InvalidRequestException");
             } catch (InvalidRequestException exception) {
             } catch (NullPointerException exception) {
                 fail("NullPointerException crash");
             }
+        }
+    }
+
+    @Test
+    void testGetByKeyValue() throws InvalidPublicIdException {
+        final var taxonomyEntity = mock(TaxonomyEntity.class);
+        when(taxonomyEntity.getPublicId()).thenReturn("urn:entity:1");
+        final var entityList = List.of(taxonomyEntity);
+        when(customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue("test", "value")).thenReturn(entityList);
+        final var expectedList = mock(List.class);
+        when(metadataAggregatorService.getMetadataForTaxonomyEntities(Set.of("urn:entity:1"))).thenReturn(expectedList);
+        final var returnedList = metadataController.getMultiple(null, "test", "value");
+        assertEquals(expectedList, returnedList);
+    }
+
+    @Test
+    void testInefficiencyWarningGetByKeyValue() throws InvalidPublicIdException {
+        final var taxonomyEntity = mock(TaxonomyEntity.class);
+        when(taxonomyEntity.getPublicId()).thenReturn("urn:entity:1");
+        /*
+         * This part is quite tied to expectations on what type of Stream
+         * calls and stream collector the controller code does/uses. This will
+         * break with only slight modifications there. But this is a quickie to
+         * just have the final public ID set return size of 101.
+         */
+        final var entitySet = mock(Set.class);
+        {
+            final var entityList = mock(List.class);
+            {
+                final var entityStream = mock(Stream.class);
+                when(entityList.stream()).thenReturn(entityStream);
+                when(entityStream.map(any(Function.class))).thenReturn(entityStream);
+                when(entityStream.collect(any(Collector.class))).thenReturn(entitySet);
+            }
+            when(customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue("test", "value")).thenReturn(entityList);
+        }
+        when(entitySet.size()).thenReturn(101);
+        final var expectedList = mock(List.class);
+        when(metadataAggregatorService.getMetadataForTaxonomyEntities(entitySet)).thenReturn(expectedList);
+        {
+            // This should by trickery above trigger a logged warning of: ... Query for key/value had more than 100 results ...
+            final var returnedList = metadataController.getMultiple(null, "test", "value");
+            assertEquals(expectedList, returnedList);
+        }
+        {
+            // This should by trickery above trigger code for a logged warning of: ... Query for key/value had more than 100 results ...
+            // HOWEVER .. the logged message is rate limited, so unless time skew, the message should not appear this time.
+            final var returnedList = metadataController.getMultiple(null, "test", "value");
+            assertEquals(expectedList, returnedList);
         }
     }
 
