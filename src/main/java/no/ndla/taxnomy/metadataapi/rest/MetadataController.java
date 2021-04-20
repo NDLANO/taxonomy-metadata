@@ -33,7 +33,7 @@ public class MetadataController {
 
     private Instant efficiencyWarnRatelimit = null;
     @GetMapping
-    public List<MetadataDto> getMultiple(@RequestParam String publicIds, @RequestParam String key, @RequestParam String value) {
+    public List<MetadataDto> getMultiple(@RequestParam(required = false) String publicIds, @RequestParam(required = false) String key, @RequestParam(required = false) String value) {
         // Read comma separated list of unique publicIds in query parameter
 
         final Set<String> publicIdSet;
