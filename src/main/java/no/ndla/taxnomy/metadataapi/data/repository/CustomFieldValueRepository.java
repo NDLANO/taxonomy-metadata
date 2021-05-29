@@ -13,4 +13,7 @@ public interface CustomFieldValueRepository extends JpaRepository<CustomFieldVal
 
     @Query("SELECT obj FROM CustomFieldValue obj WHERE obj.taxonomyEntity.id = :taxonomyEntity")
     Iterable<CustomFieldValue> findAllByTaxonomyEntity(UUID taxonomyEntity);
+
+    @Query("SELECT obj FROM CustomFieldValue obj LEFT JOIN FETCH obj.taxonomyEntity WHERE obj.customField.id = :customField AND obj.value = :value")
+    Iterable<CustomFieldValue> findAllByCustomFieldAndValue(UUID customField, String value);
 }
