@@ -70,7 +70,12 @@ public class CustomFieldServiceImpl implements CustomFieldService {
             }
             customFieldId = customField.getId();
         }
-        return StreamSupport.stream(customFieldValueRepository.findAllByCustomFieldAndValue(customFieldId, value).spliterator(), false)
+
+        Iterable<CustomFieldValue> customFields;
+        if (value != null) customFields = customFieldValueRepository.findAllByCustomFieldAndValue(customFieldId, value);
+        else customFields = customFieldValueRepository.findAllByCustomField(customFieldId);
+
+        return StreamSupport.stream(customFields.spliterator(), false)
                 .map(CustomFieldValue::getTaxonomyEntity)
                 .collect(Collectors.toList());
     }

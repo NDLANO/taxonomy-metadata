@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -112,7 +114,9 @@ public class CustomFieldServiceImplTest {
     @Test
     public void testDeleteUnknownValue() {
         final var id = UUID.randomUUID();
-        assertThrows(EntityNotFoundException.class, () -> {customFieldService.unsetCustomField(id); });
+        assertThrows(EntityNotFoundException.class, () -> {
+            customFieldService.unsetCustomField(id);
+        });
     }
 
     @Test
@@ -157,5 +161,28 @@ public class CustomFieldServiceImplTest {
             assertFalse(iterator.hasNext());
         }
         assertEquals("urn:test:1", taxonomyEntity.getPublicId().toString());
+    }
+
+    @Test
+    public void testGetByKeyNullValue() {
+        {
+            CustomField customField = new CustomField();
+            customField.setPublicId("urn:customfield:1");
+            customField.setKey("testkey");
+            customField = customFieldRepository.save(customField);
+            TaxonomyEntity taxonomyEntity = new TaxonomyEntity();
+            taxonomyEntity.setPublicId("urn:test:1");
+            taxonomyEntity = taxonomyEntityRepository.save(taxonomyEntity);
+            {
+                CustomFieldValue customFieldValue = new CustomFieldValue();
+                customFieldValue.setCustomField(customField);
+                customFieldValue.setTaxonomyEntity(taxonomyEntity);
+                customFieldValue.setValue("testvalue");
+                customFieldValueRepository.save(customFieldValue);
+            }
+        }
+        final var entities = customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue("testkey", null);
+        assertEquals(1, entities.size());
+        assertEquals("urn:test:1", entities.get(0).getPublicId());
     }
 }
