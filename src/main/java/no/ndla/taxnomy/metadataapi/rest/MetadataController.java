@@ -38,7 +38,7 @@ public class MetadataController {
 
         final Set<String> publicIdSet;
         if (publicIds == null) {
-            if (key == null || value == null) {
+            if (key == null && value == null) {
                 throw new InvalidRequestException("Query publicIds and key/value not specified");
             }
             publicIdSet = customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue(key, value).stream()
