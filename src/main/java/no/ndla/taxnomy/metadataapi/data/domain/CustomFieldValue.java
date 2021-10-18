@@ -7,12 +7,15 @@ import java.util.UUID;
 public class CustomFieldValue {
     @Id
     private UUID id;
+
     @ManyToOne
     @JoinColumn(name = "taxonomy_entity_id")
     private TaxonomyEntity taxonomyEntity;
+
     @ManyToOne
     @JoinColumn(name = "custom_field_id")
     private CustomField customField;
+
     @Column
     private String value;
 

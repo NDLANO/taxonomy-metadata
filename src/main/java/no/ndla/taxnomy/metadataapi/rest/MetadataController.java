@@ -26,14 +26,17 @@ public class MetadataController {
     private final MetadataAggregatorService metadataAggregatorService;
     private final CustomFieldService customFieldService;
 
-    public MetadataController(MetadataAggregatorService metadataAggregatorService, CustomFieldService customFieldService) {
+    public MetadataController(MetadataAggregatorService metadataAggregatorService,
+            CustomFieldService customFieldService) {
         this.metadataAggregatorService = metadataAggregatorService;
         this.customFieldService = customFieldService;
     }
 
     private Instant efficiencyWarnRatelimit = null;
+
     @GetMapping
-    public List<MetadataDto> getMultiple(@RequestParam(required = false) String publicIds, @RequestParam(required = false) String key, @RequestParam(required = false) String value) {
+    public List<MetadataDto> getMultiple(@RequestParam(required = false) String publicIds,
+            @RequestParam(required = false) String key, @RequestParam(required = false) String value) {
         // Read comma separated list of unique publicIds in query parameter
 
         final Set<String> publicIdSet;
@@ -42,8 +45,7 @@ public class MetadataController {
                 throw new InvalidRequestException("Query publicIds and key/value not specified");
             }
             publicIdSet = customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue(key, value).stream()
-                    .map(TaxonomyEntity::getPublicId)
-                    .collect(Collectors.toSet());
+                    .map(TaxonomyEntity::getPublicId).collect(Collectors.toSet());
 
             if (publicIdSet.size() > 100) {
                 /*
@@ -76,7 +78,8 @@ public class MetadataController {
                     }
                 }
                 if (printWarn) {
-                    logger.warn("Query for key/value had more than 100 results. This is starting to become inefficient/slow. (Refactor?)");
+                    logger.warn(
+                            "Query for key/value had more than 100 results. This is starting to become inefficient/slow. (Refactor?)");
                 }
             }
         } else if (publicIds.length() == 0) {
@@ -87,9 +90,7 @@ public class MetadataController {
             }
             final var publicIdFilter = new HashSet<>(Arrays.asList(publicIds.split(",")));
             publicIdSet = customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue(key, value).stream()
-                    .map(TaxonomyEntity::getPublicId)
-                    .filter(publicIdFilter::contains)
-                    .collect(Collectors.toSet());
+                    .map(TaxonomyEntity::getPublicId).filter(publicIdFilter::contains).collect(Collectors.toSet());
 
             if (publicIdSet.size() > 100) {
                 throw new InvalidRequestException("Cannot get metadata for more than 100 entities in each request");
@@ -101,7 +102,6 @@ public class MetadataController {
                 throw new InvalidRequestException("Cannot get metadata for more than 100 entities in each request");
             }
         }
-
 
         try {
             return metadataAggregatorService.getMetadataForTaxonomyEntities(publicIdSet);
@@ -120,9 +120,11 @@ public class MetadataController {
     }
 
     @PutMapping("/{publicId}")
-    public MetadataDto put(@PathVariable String publicId, @RequestBody @Valid MetadataDto requestMetadataDto, BindingResult bindingResult) {
+    public MetadataDto put(@PathVariable String publicId, @RequestBody @Valid MetadataDto requestMetadataDto,
+            BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            throw new InvalidRequestException(bindingResult.getErrorCount() + " errors in provided body, first error: " + bindingResult.getAllErrors().get(0));
+            throw new InvalidRequestException(bindingResult.getErrorCount() + " errors in provided body, first error: "
+                    + bindingResult.getAllErrors().get(0));
         }
 
         try {
@@ -133,9 +135,11 @@ public class MetadataController {
     }
 
     @PutMapping("/")
-    public List<MetadataDto> putBulk(@RequestBody @Valid MetadataDto[] requestMetadataDtos, BindingResult bindingResult) {
+    public List<MetadataDto> putBulk(@RequestBody @Valid MetadataDto[] requestMetadataDtos,
+            BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            throw new InvalidRequestException(bindingResult.getErrorCount() + " errors in provided body, first error: " + bindingResult.getAllErrors().get(0));
+            throw new InvalidRequestException(bindingResult.getErrorCount() + " errors in provided body, first error: "
+                    + bindingResult.getAllErrors().get(0));
         }
 
         try {

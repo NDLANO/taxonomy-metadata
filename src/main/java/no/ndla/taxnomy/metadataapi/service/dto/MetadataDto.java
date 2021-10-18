@@ -27,7 +27,6 @@ public class MetadataDto {
         }
 
         CompetenceAim() {
-
         }
     }
 
@@ -38,7 +37,7 @@ public class MetadataDto {
     @Valid
     private Set<CompetenceAim> competenceAims;
 
-    private Map<String,String> customFields;
+    private Map<String, String> customFields;
 
     public String getPublicId() {
         return publicId;
@@ -61,7 +60,6 @@ public class MetadataDto {
     }
 
     public MetadataDto() {
-
     }
 
     public void populateEmpty() {

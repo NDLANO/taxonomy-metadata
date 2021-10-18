@@ -9,5 +9,4 @@ public class MetadataApiApplication {
     public static void main(String[] args) {
         SpringApplication.run(MetadataApiApplication.class, args);
     }
-
 }

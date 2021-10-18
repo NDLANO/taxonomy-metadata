@@ -25,16 +25,17 @@ public class TaxonomyEntity {
 
     @SuppressWarnings("JpaDataSourceORMInspection")
     @ManyToMany(cascade = CascadeType.ALL)
-    @JoinTable(name = "taxonomy_entity_competence_aim",
-            joinColumns = @JoinColumn(name = "taxonomy_entity_id"),
-            inverseJoinColumns = @JoinColumn(name = "competence_aim_id")
-    )
+    @JoinTable(name = "taxonomy_entity_competence_aim", joinColumns = @JoinColumn(name = "taxonomy_entity_id"), inverseJoinColumns = @JoinColumn(name = "competence_aim_id"))
     private Set<CompetenceAim> competenceAims = new HashSet<>();
 
-    // JPA will delete custom field values automatically if they are removed from this set and this entity persisted.
-    // This is for the @PreRemoval to take effect and automatically remove values when this entity is deleted
-    // - makes sense - right? otherwise service level code would have to always delete values before deleting this.
-    @OneToMany(cascade = {CascadeType.REMOVE, CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, orphanRemoval = true, mappedBy = "taxonomyEntity")
+    // JPA will delete custom field values automatically if they are removed from this set and this
+    // entity persisted.
+    // This is for the @PreRemoval to take effect and automatically remove values when this entity
+    // is deleted
+    // - makes sense - right? otherwise service level code would have to always delete values before
+    // deleting this.
+    @OneToMany(cascade = { CascadeType.REMOVE, CascadeType.PERSIST, CascadeType.MERGE,
+            CascadeType.REFRESH }, orphanRemoval = true, mappedBy = "taxonomyEntity")
     private Set<CustomFieldValue> customFieldValues;
 
     @Column

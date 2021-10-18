@@ -9,5 +9,4 @@ class MetadataApiApplicationTests {
     @Test
     void contextLoads() {
     }
-
 }

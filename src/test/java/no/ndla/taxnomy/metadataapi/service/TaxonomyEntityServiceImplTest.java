@@ -178,7 +178,8 @@ class TaxonomyEntityServiceImplTest {
         final var existingEntity = taxonomyEntityRepository.saveAndFlush(existingEntityToCreate);
 
         // Should create urn:test:2001, but return existing urn:test:2002
-        final var taxonomyEntities = taxonomyEntityService.getOrCreateTaxonomyEntities(List.of("urn:test:2001", "urn:test:2002"));
+        final var taxonomyEntities = taxonomyEntityService
+                .getOrCreateTaxonomyEntities(List.of("urn:test:2001", "urn:test:2002"));
 
         // Returned list is ordered the same order as received (when ordered)
         final var returnedEntity1 = taxonomyEntities.get(0);

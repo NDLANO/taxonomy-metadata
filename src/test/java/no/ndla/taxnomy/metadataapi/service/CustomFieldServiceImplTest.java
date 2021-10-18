@@ -31,7 +31,9 @@ public class CustomFieldServiceImplTest {
     private CustomFieldServiceImpl customFieldService;
 
     @BeforeEach
-    public void setUp(@Autowired TaxonomyEntityRepository taxonomyEntityRepository, @Autowired CustomFieldRepository customFieldRepository, @Autowired CustomFieldValueRepository customFieldValueRepository) {
+    public void setUp(@Autowired TaxonomyEntityRepository taxonomyEntityRepository,
+            @Autowired CustomFieldRepository customFieldRepository,
+            @Autowired CustomFieldValueRepository customFieldValueRepository) {
         this.taxonomyEntityRepository = taxonomyEntityRepository;
         this.customFieldRepository = customFieldRepository;
         this.customFieldValueRepository = customFieldValueRepository;
@@ -41,7 +43,9 @@ public class CustomFieldServiceImplTest {
     }
 
     @AfterAll
-    public static void cleanUp(@Autowired TaxonomyEntityRepository taxonomyEntityRepository, @Autowired CustomFieldRepository customFieldRepository, @Autowired CustomFieldValueRepository customFieldValueRepository) {
+    public static void cleanUp(@Autowired TaxonomyEntityRepository taxonomyEntityRepository,
+            @Autowired CustomFieldRepository customFieldRepository,
+            @Autowired CustomFieldValueRepository customFieldValueRepository) {
         taxonomyEntityRepository.deleteAll();
         customFieldRepository.deleteAll();
     }
@@ -58,7 +62,8 @@ public class CustomFieldServiceImplTest {
         final var customField = customFieldRepository.findByKey("new-field").orElse(null);
         assertNotNull(customField);
         assertNotNull(customField.getId());
-        final var customFieldValue = customFieldValueRepository.findByTaxonomyEntityAndCustomField(taxonomyEntity.getId(), customField.getId()).orElse(null);
+        final var customFieldValue = customFieldValueRepository
+                .findByTaxonomyEntityAndCustomField(taxonomyEntity.getId(), customField.getId()).orElse(null);
         assertNotNull(customFieldValue);
         assertNotNull(customFieldValue.getId());
         assertNotNull(customFieldValue.getTaxonomyEntity());

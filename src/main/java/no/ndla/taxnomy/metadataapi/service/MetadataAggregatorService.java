@@ -12,9 +12,11 @@ public interface MetadataAggregatorService {
 
     MetadataDto getMetadataForTaxonomyEntity(String publicId) throws InvalidPublicIdException;
 
-    MetadataDto updateMetadataForTaxonomyEntity(String publicId, MetadataDto updateDto) throws InvalidPublicIdException, InvalidDataException;
+    MetadataDto updateMetadataForTaxonomyEntity(String publicId, MetadataDto updateDto)
+            throws InvalidPublicIdException, InvalidDataException;
 
-    List<MetadataDto> updateMetadataForTaxonomyEntities(List<MetadataDto> updateDtos) throws InvalidPublicIdException, InvalidDataException;
+    List<MetadataDto> updateMetadataForTaxonomyEntities(List<MetadataDto> updateDtos)
+            throws InvalidPublicIdException, InvalidDataException;
 
     void deleteMetadataForTaxonomyEntity(String publicId) throws InvalidPublicIdException;
 }

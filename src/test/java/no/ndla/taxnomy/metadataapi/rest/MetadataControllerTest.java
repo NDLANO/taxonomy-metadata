@@ -61,7 +61,8 @@ class MetadataControllerTest {
         final var returnedAims = returned.getCompetenceAims();
         assertEquals(2, returned.getCompetenceAims().size());
 
-        assertTrue(returnedAims.stream().map(MetadataDto.CompetenceAim::getCode).collect(Collectors.toSet()).containsAll(Set.of("AIM1", "AIM2")));
+        assertTrue(returnedAims.stream().map(MetadataDto.CompetenceAim::getCode).collect(Collectors.toSet())
+                .containsAll(Set.of("AIM1", "AIM2")));
     }
 
     @Test
@@ -71,13 +72,14 @@ class MetadataControllerTest {
             when(metadataDtoToReturn.getPublicId()).thenReturn("urn:test:1");
             when(metadataDtoToReturn.getCompetenceAims()).thenReturn(Set.of());
 
-            when(metadataAggregatorService.updateMetadataForTaxonomyEntity(eq("urn:test:1"), any(MetadataDto.class))).thenAnswer(invocationOnMock -> {
-                final var metadataUpdateObject = invocationOnMock.getArgument(1, MetadataDto.class);
+            when(metadataAggregatorService.updateMetadataForTaxonomyEntity(eq("urn:test:1"), any(MetadataDto.class)))
+                    .thenAnswer(invocationOnMock -> {
+                        final var metadataUpdateObject = invocationOnMock.getArgument(1, MetadataDto.class);
 
-                assertNotNull(metadataUpdateObject);
+                        assertNotNull(metadataUpdateObject);
 
-                return metadataUpdateObject;
-            });
+                        return metadataUpdateObject;
+                    });
         }
 
         {
@@ -93,11 +95,11 @@ class MetadataControllerTest {
 
             assertEquals("urn:test:1", returnedMetadataDto.getPublicId());
 
-            assertTrue(returnedMetadataDto.getCompetenceAims().stream().map(MetadataDto.CompetenceAim::getCode).collect(Collectors.toSet()).containsAll(Set.of("AIM1", "AIM2")));
+            assertTrue(returnedMetadataDto.getCompetenceAims().stream().map(MetadataDto.CompetenceAim::getCode)
+                    .collect(Collectors.toSet()).containsAll(Set.of("AIM1", "AIM2")));
 
             verify(metadataAggregatorService).updateMetadataForTaxonomyEntity(eq("urn:test:1"), any(MetadataDto.class));
         }
-
 
         {
             final var bindingResult = mock(BindingResult.class);
@@ -119,7 +121,8 @@ class MetadataControllerTest {
 
     @Test
     void delete() throws InvalidPublicIdException {
-        doThrow(new InvalidPublicIdException("")).when(metadataAggregatorService).deleteMetadataForTaxonomyEntity("urn:test:2");
+        doThrow(new InvalidPublicIdException("")).when(metadataAggregatorService)
+                .deleteMetadataForTaxonomyEntity("urn:test:2");
 
         {
             final var returned = metadataController.delete("urn:test:1");
@@ -141,14 +144,15 @@ class MetadataControllerTest {
         {
             final var toReturn = mock(List.class);
 
-            when(metadataAggregatorService.getMetadataForTaxonomyEntities(any(Collection.class))).thenAnswer(invocationOnMock -> {
-                final var requested = (Collection<String>) invocationOnMock.getArgument(0, Collection.class);
+            when(metadataAggregatorService.getMetadataForTaxonomyEntities(any(Collection.class)))
+                    .thenAnswer(invocationOnMock -> {
+                        final var requested = (Collection<String>) invocationOnMock.getArgument(0, Collection.class);
 
-                assertEquals(3, requested.size());
-                assertTrue(requested.containsAll(Set.of("urn:test:1", "urn:test:2", "urn:test:3")));
+                        assertEquals(3, requested.size());
+                        assertTrue(requested.containsAll(Set.of("urn:test:1", "urn:test:2", "urn:test:3")));
 
-                return toReturn;
-            });
+                        return toReturn;
+                    });
 
             final var returned = metadataController.getMultiple("urn:test:1,urn:test:2,urn:test:3", null, null);
             assertSame(toReturn, returned);
@@ -185,7 +189,8 @@ class MetadataControllerTest {
         }
 
         {
-            when(metadataAggregatorService.getMetadataForTaxonomyEntities(any(Collection.class))).thenThrow(new InvalidPublicIdException(""));
+            when(metadataAggregatorService.getMetadataForTaxonomyEntities(any(Collection.class)))
+                    .thenThrow(new InvalidPublicIdException(""));
 
             try {
                 metadataController.getMultiple("urn:test:1", null, null);
@@ -196,7 +201,8 @@ class MetadataControllerTest {
         }
 
         {
-            when(metadataAggregatorService.getMetadataForTaxonomyEntities(any(Collection.class))).thenThrow(new InvalidPublicIdException(""));
+            when(metadataAggregatorService.getMetadataForTaxonomyEntities(any(Collection.class)))
+                    .thenThrow(new InvalidPublicIdException(""));
 
             try {
                 metadataController.getMultiple(null, null, null);
@@ -225,10 +231,9 @@ class MetadataControllerTest {
         final var taxonomyEntity = mock(TaxonomyEntity.class);
         when(taxonomyEntity.getPublicId()).thenReturn("urn:entity:1");
         /*
-         * This part is quite tied to expectations on what type of Stream
-         * calls and stream collector the controller code does/uses. This will
-         * break with only slight modifications there. But this is a quickie to
-         * just have the final public ID set return size of 101.
+         * This part is quite tied to expectations on what type of Stream calls and stream collector the controller code
+         * does/uses. This will break with only slight modifications there. But this is a quickie to just have the final
+         * public ID set return size of 101.
          */
         final var entitySet = mock(Set.class);
         {
@@ -245,13 +250,16 @@ class MetadataControllerTest {
         final var expectedList = mock(List.class);
         when(metadataAggregatorService.getMetadataForTaxonomyEntities(entitySet)).thenReturn(expectedList);
         {
-            // This should by trickery above trigger a logged warning of: ... Query for key/value had more than 100 results ...
+            // This should by trickery above trigger a logged warning of: ... Query for key/value
+            // had more than 100 results ...
             final var returnedList = metadataController.getMultiple(null, "test", "value");
             assertEquals(expectedList, returnedList);
         }
         {
-            // This should by trickery above trigger code for a logged warning of: ... Query for key/value had more than 100 results ...
-            // HOWEVER .. the logged message is rate limited, so unless time skew, the message should not appear this time.
+            // This should by trickery above trigger code for a logged warning of: ... Query for
+            // key/value had more than 100 results ...
+            // HOWEVER .. the logged message is rate limited, so unless time skew, the message
+            // should not appear this time.
             final var returnedList = metadataController.getMultiple(null, "test", "value");
             assertEquals(expectedList, returnedList);
         }
@@ -267,12 +275,11 @@ class MetadataControllerTest {
             final var entity1ToReturn = mock(MetadataDto.class);
             final var entity2ToReturn = mock(MetadataDto.class);
 
-            when(metadataAggregatorService.updateMetadataForTaxonomyEntities(anyList())).thenAnswer(invocationOnMock -> {
-                final var inputObjects = (List<MetadataDto>) invocationOnMock.getArgument(0);
+            when(metadataAggregatorService.updateMetadataForTaxonomyEntities(anyList()))
+                    .thenAnswer(invocationOnMock -> {
+                        final var inputObjects = (List<MetadataDto>) invocationOnMock.getArgument(0);
 
-                return inputObjects
-                        .stream()
-                        .map(inputObject -> {
+                        return inputObjects.stream().map(inputObject -> {
                             if (inputObject == entity1ToUpdate) {
                                 return entity1ToReturn;
                             } else if (inputObject == entity2ToUpdate) {
@@ -280,11 +287,11 @@ class MetadataControllerTest {
                             }
 
                             return null;
-                        })
-                        .collect(Collectors.toList());
-            });
+                        }).collect(Collectors.toList());
+                    });
 
-            final var returnedObjects = metadataController.putBulk(List.of(entity1ToUpdate, entity2ToUpdate).toArray(new MetadataDto[0]), mock(BindingResult.class));
+            final var returnedObjects = metadataController.putBulk(
+                    List.of(entity1ToUpdate, entity2ToUpdate).toArray(new MetadataDto[0]), mock(BindingResult.class));
 
             assertEquals(2, returnedObjects.size());
             assertSame(entity1ToReturn, returnedObjects.get(0));
@@ -294,10 +301,12 @@ class MetadataControllerTest {
         {
             final var entityToUpdate = mock(MetadataDto.class);
 
-            when(metadataAggregatorService.updateMetadataForTaxonomyEntities(anyList())).thenThrow(new InvalidPublicIdException(""));
+            when(metadataAggregatorService.updateMetadataForTaxonomyEntities(anyList()))
+                    .thenThrow(new InvalidPublicIdException(""));
 
             try {
-                metadataController.putBulk(List.of(entityToUpdate).toArray(new MetadataDto[0]), mock(BindingResult.class));
+                metadataController.putBulk(List.of(entityToUpdate).toArray(new MetadataDto[0]),
+                        mock(BindingResult.class));
                 fail("Expected InvalidRequestException");
             } catch (InvalidRequestException e) {
                 assertTrue(e.getCause() instanceof InvalidPublicIdException);
