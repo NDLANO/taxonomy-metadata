@@ -12,6 +12,7 @@ import java.util.UUID;
 public interface TaxonomyEntityRepository extends JpaRepository<TaxonomyEntity, UUID> {
     Optional<TaxonomyEntity> findFirstByPublicId(String publicId);
 
-    @Query("SELECT DISTINCT te FROM TaxonomyEntity te LEFT JOIN FETCH te.competenceAims WHERE te.publicId IN :publicIds")
+    @Query(
+            "SELECT DISTINCT te FROM TaxonomyEntity te LEFT JOIN FETCH te.competenceAims WHERE te.publicId IN :publicIds")
     List<TaxonomyEntity> findAllByPublicIdInIncludingCompetenceAims(Collection<String> publicIds);
 }

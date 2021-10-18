@@ -31,17 +31,24 @@ public class CustomFieldServiceImplTest {
     private CustomFieldServiceImpl customFieldService;
 
     @BeforeEach
-    public void setUp(@Autowired TaxonomyEntityRepository taxonomyEntityRepository, @Autowired CustomFieldRepository customFieldRepository, @Autowired CustomFieldValueRepository customFieldValueRepository) {
+    public void setUp(
+            @Autowired TaxonomyEntityRepository taxonomyEntityRepository,
+            @Autowired CustomFieldRepository customFieldRepository,
+            @Autowired CustomFieldValueRepository customFieldValueRepository) {
         this.taxonomyEntityRepository = taxonomyEntityRepository;
         this.customFieldRepository = customFieldRepository;
         this.customFieldValueRepository = customFieldValueRepository;
-        this.customFieldService = new CustomFieldServiceImpl(customFieldRepository, customFieldValueRepository);
+        this.customFieldService =
+                new CustomFieldServiceImpl(customFieldRepository, customFieldValueRepository);
         taxonomyEntityRepository.deleteAll();
         customFieldRepository.deleteAll();
     }
 
     @AfterAll
-    public static void cleanUp(@Autowired TaxonomyEntityRepository taxonomyEntityRepository, @Autowired CustomFieldRepository customFieldRepository, @Autowired CustomFieldValueRepository customFieldValueRepository) {
+    public static void cleanUp(
+            @Autowired TaxonomyEntityRepository taxonomyEntityRepository,
+            @Autowired CustomFieldRepository customFieldRepository,
+            @Autowired CustomFieldValueRepository customFieldValueRepository) {
         taxonomyEntityRepository.deleteAll();
         customFieldRepository.deleteAll();
     }
@@ -58,7 +65,11 @@ public class CustomFieldServiceImplTest {
         final var customField = customFieldRepository.findByKey("new-field").orElse(null);
         assertNotNull(customField);
         assertNotNull(customField.getId());
-        final var customFieldValue = customFieldValueRepository.findByTaxonomyEntityAndCustomField(taxonomyEntity.getId(), customField.getId()).orElse(null);
+        final var customFieldValue =
+                customFieldValueRepository
+                        .findByTaxonomyEntityAndCustomField(
+                                taxonomyEntity.getId(), customField.getId())
+                        .orElse(null);
         assertNotNull(customFieldValue);
         assertNotNull(customFieldValue.getId());
         assertNotNull(customFieldValue.getTaxonomyEntity());
@@ -102,7 +113,8 @@ public class CustomFieldServiceImplTest {
         customFieldValue.setValue("A value");
         customFieldValue = customFieldValueRepository.save(customFieldValue);
         assertNotNull(customFieldValue.getId());
-        Map<String, CustomFieldService.FieldValue> values = customFieldService.getCustomFields(taxonomyEntity);
+        Map<String, CustomFieldService.FieldValue> values =
+                customFieldService.getCustomFields(taxonomyEntity);
         assertFalse(values.isEmpty());
         final var value = values.get("new-field");
         assertEquals(customFieldValue.getId(), value.getId());
@@ -114,14 +126,19 @@ public class CustomFieldServiceImplTest {
     @Test
     public void testDeleteUnknownValue() {
         final var id = UUID.randomUUID();
-        assertThrows(EntityNotFoundException.class, () -> {
-            customFieldService.unsetCustomField(id);
-        });
+        assertThrows(
+                EntityNotFoundException.class,
+                () -> {
+                    customFieldService.unsetCustomField(id);
+                });
     }
 
     @Test
     public void testGetByKeyValueKeyNotFound() {
-        assertTrue(customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue("testkey", "testvalue").isEmpty());
+        assertTrue(
+                customFieldService
+                        .getTaxonomyEntitiesByCustomFieldKeyValue("testkey", "testvalue")
+                        .isEmpty());
     }
 
     @Test
@@ -130,7 +147,10 @@ public class CustomFieldServiceImplTest {
         customField.setPublicId("urn:customfield:1");
         customField.setKey("testkey");
         customField = customFieldRepository.save(customField);
-        assertTrue(customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue("testkey", "testvalue").isEmpty());
+        assertTrue(
+                customFieldService
+                        .getTaxonomyEntitiesByCustomFieldKeyValue("testkey", "testvalue")
+                        .isEmpty());
     }
 
     @Test
@@ -151,7 +171,8 @@ public class CustomFieldServiceImplTest {
                 customFieldValueRepository.save(customFieldValue);
             }
         }
-        final var entities = customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue("testkey", "testvalue");
+        final var entities =
+                customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue("testkey", "testvalue");
         assertFalse(entities.isEmpty());
         final TaxonomyEntity taxonomyEntity;
         {
@@ -181,7 +202,8 @@ public class CustomFieldServiceImplTest {
                 customFieldValueRepository.save(customFieldValue);
             }
         }
-        final var entities = customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue("testkey", null);
+        final var entities =
+                customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue("testkey", null);
         assertEquals(1, entities.size());
         assertEquals("urn:test:1", entities.get(0).getPublicId());
     }

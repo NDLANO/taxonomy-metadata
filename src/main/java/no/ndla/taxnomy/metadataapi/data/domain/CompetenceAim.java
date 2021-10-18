@@ -12,17 +12,12 @@ import java.util.stream.Collectors;
 
 @Entity
 public class CompetenceAim {
-    @Id
-    @Column
-    private UUID id;
+    @Id @Column private UUID id;
 
-    @Column
-    private String code;
+    @Column private String code;
 
-    @UpdateTimestamp
-    private Instant updatedAt;
-    @CreationTimestamp
-    private Instant createdAt;
+    @UpdateTimestamp private Instant updatedAt;
+    @CreationTimestamp private Instant createdAt;
 
     @ManyToMany(mappedBy = "competenceAims")
     private Set<TaxonomyEntity> taxonomyEntities = new HashSet<>();

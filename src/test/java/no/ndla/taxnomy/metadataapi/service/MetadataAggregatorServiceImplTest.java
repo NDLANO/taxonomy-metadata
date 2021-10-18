@@ -31,9 +31,15 @@ class MetadataAggregatorServiceImplTest {
         customFieldService = mock(CustomFieldService.class);
         publicIdValidator = mock(PublicIdValidator.class);
 
-        when(taxonomyEntityService.saveTaxonomyEntity(Mockito.any())).thenAnswer(inv -> inv.getArgument(0));
+        when(taxonomyEntityService.saveTaxonomyEntity(Mockito.any()))
+                .thenAnswer(inv -> inv.getArgument(0));
 
-        metadataAggregatorService = new MetadataAggregatorServiceImpl(taxonomyEntityService, competenceAimService, customFieldService, publicIdValidator);
+        metadataAggregatorService =
+                new MetadataAggregatorServiceImpl(
+                        taxonomyEntityService,
+                        competenceAimService,
+                        customFieldService,
+                        publicIdValidator);
     }
 
     @Test
@@ -41,10 +47,12 @@ class MetadataAggregatorServiceImplTest {
         {
             final var taxonomyEntity = mock(TaxonomyEntity.class);
             when(taxonomyEntity.getPublicId()).thenReturn("urn:test:1");
-            when(taxonomyEntityService.getTaxonomyEntity("urn:test:1")).thenReturn(Optional.of(taxonomyEntity));
+            when(taxonomyEntityService.getTaxonomyEntity("urn:test:1"))
+                    .thenReturn(Optional.of(taxonomyEntity));
             when(customFieldService.getCustomFields(taxonomyEntity)).thenReturn(Map.of());
 
-            final var metadataDto = metadataAggregatorService.getMetadataForTaxonomyEntity("urn:test:1");
+            final var metadataDto =
+                    metadataAggregatorService.getMetadataForTaxonomyEntity("urn:test:1");
 
             assertEquals("urn:test:1", metadataDto.getPublicId());
             assertNotNull(metadataDto.getCompetenceAims());
@@ -58,18 +66,23 @@ class MetadataAggregatorServiceImplTest {
         {
             final var taxonomyEntity = mock(TaxonomyEntity.class);
             when(taxonomyEntity.getPublicId()).thenReturn("urn:test:2");
-            when(taxonomyEntityService.getTaxonomyEntity("urn:test:2")).thenReturn(Optional.of(taxonomyEntity));
-            when(customFieldService.getCustomFields(taxonomyEntity)).thenReturn(Map.of("test", new CustomFieldService.FieldValue() {
-                @Override
-                public UUID getId() {
-                    return UUID.randomUUID();
-                }
+            when(taxonomyEntityService.getTaxonomyEntity("urn:test:2"))
+                    .thenReturn(Optional.of(taxonomyEntity));
+            when(customFieldService.getCustomFields(taxonomyEntity))
+                    .thenReturn(
+                            Map.of(
+                                    "test",
+                                    new CustomFieldService.FieldValue() {
+                                        @Override
+                                        public UUID getId() {
+                                            return UUID.randomUUID();
+                                        }
 
-                @Override
-                public String getValue() {
-                    return "value";
-                }
-            }));
+                                        @Override
+                                        public String getValue() {
+                                            return "value";
+                                        }
+                                    }));
 
             final var aim1 = mock(CompetenceAim.class);
             when(aim1.getCode()).thenReturn("AIM1");
@@ -78,20 +91,18 @@ class MetadataAggregatorServiceImplTest {
 
             when(taxonomyEntity.getCompetenceAims()).thenReturn(Set.of(aim1, aim2));
 
-            final var metadataDto = metadataAggregatorService.getMetadataForTaxonomyEntity("urn:test:2");
+            final var metadataDto =
+                    metadataAggregatorService.getMetadataForTaxonomyEntity("urn:test:2");
 
             assertEquals("urn:test:2", metadataDto.getPublicId());
             assertNotNull(metadataDto.getCompetenceAims());
             assertEquals(2, metadataDto.getCompetenceAims().size());
 
             assertTrue(
-                    metadataDto
-                            .getCompetenceAims()
-                            .stream()
+                    metadataDto.getCompetenceAims().stream()
                             .map(MetadataDto.CompetenceAim::getCode)
                             .collect(Collectors.toSet())
-                            .containsAll(Set.of("AIM1", "AIM2"))
-            );
+                            .containsAll(Set.of("AIM1", "AIM2")));
 
             assertNotNull(metadataDto.getCustomFields());
             assertEquals("value", metadataDto.getCustomFields().get("test"));
@@ -129,32 +140,51 @@ class MetadataAggregatorServiceImplTest {
             when(competenceAimService.getOrCreateCompetenceAim("K1")).thenReturn(aimToKeep1);
             when(competenceAimService.getOrCreateCompetenceAim("K2")).thenReturn(aimToKeep2);
 
-
             final var taxonomyEntity = mock(TaxonomyEntity.class);
-            when(taxonomyEntity.getCompetenceAims()).thenReturn(Set.of(aimToKeep1, aimToKeep2, aimToRemove1, aimToRemove2));
-            when(taxonomyEntityService.getOrCreateTaxonomyEntity("urn:test:4001")).thenReturn(taxonomyEntity);
-            when(customFieldService.getCustomFields(taxonomyEntity)).thenReturn(Map.of(
-                    "keep1", new CustomFieldServiceImpl.FieldValueImpl(fieldToKeep1, "keep-value"),
-                    "keep2", new CustomFieldServiceImpl.FieldValueImpl(fieldToKeep2, "keep-value"),
-                    "remove", new CustomFieldServiceImpl.FieldValueImpl(fieldToRemove, "remove-value")
-            ));
+            when(taxonomyEntity.getCompetenceAims())
+                    .thenReturn(Set.of(aimToKeep1, aimToKeep2, aimToRemove1, aimToRemove2));
+            when(taxonomyEntityService.getOrCreateTaxonomyEntity("urn:test:4001"))
+                    .thenReturn(taxonomyEntity);
+            when(customFieldService.getCustomFields(taxonomyEntity))
+                    .thenReturn(
+                            Map.of(
+                                    "keep1",
+                                            new CustomFieldServiceImpl.FieldValueImpl(
+                                                    fieldToKeep1, "keep-value"),
+                                    "keep2",
+                                            new CustomFieldServiceImpl.FieldValueImpl(
+                                                    fieldToKeep2, "keep-value"),
+                                    "remove",
+                                            new CustomFieldServiceImpl.FieldValueImpl(
+                                                    fieldToRemove, "remove-value")));
 
             final var requestObject = new MetadataDto("urn:test:4001");
-            requestObject.setCompetenceAims(Set.of(
-                    new MetadataDto.CompetenceAim("K1"),
-                    new MetadataDto.CompetenceAim("K2"),
-                    new MetadataDto.CompetenceAim("A1"),
-                    new MetadataDto.CompetenceAim("A2")
-            ));
-            requestObject.setCustomFields(Map.of("keep1", "changed-keep-value", "keep2", "keep-value", "add", "add-value"));
-            metadataAggregatorService.updateMetadataForTaxonomyEntity("urn:test:4001", requestObject);
+            requestObject.setCompetenceAims(
+                    Set.of(
+                            new MetadataDto.CompetenceAim("K1"),
+                            new MetadataDto.CompetenceAim("K2"),
+                            new MetadataDto.CompetenceAim("A1"),
+                            new MetadataDto.CompetenceAim("A2")));
+            requestObject.setCustomFields(
+                    Map.of(
+                            "keep1",
+                            "changed-keep-value",
+                            "keep2",
+                            "keep-value",
+                            "add",
+                            "add-value"));
+            metadataAggregatorService.updateMetadataForTaxonomyEntity(
+                    "urn:test:4001", requestObject);
 
             verify(taxonomyEntity).addCompetenceAim(aimToAdd1);
             verify(taxonomyEntity).addCompetenceAim(aimToAdd2);
             verify(taxonomyEntity).removeCompetenceAim(aimToRemove1);
             verify(taxonomyEntity).removeCompetenceAim(aimToRemove2);
-            verify(customFieldService, times(1)).setCustomField(taxonomyEntity, "keep1", "changed-keep-value");
-            verify(customFieldService, never()).setCustomField(Mockito.eq(taxonomyEntity), Mockito.eq("keep2"), Mockito.anyString());
+            verify(customFieldService, times(1))
+                    .setCustomField(taxonomyEntity, "keep1", "changed-keep-value");
+            verify(customFieldService, never())
+                    .setCustomField(
+                            Mockito.eq(taxonomyEntity), Mockito.eq("keep2"), Mockito.anyString());
             verify(customFieldService, times(1)).setCustomField(taxonomyEntity, "add", "add-value");
             try {
                 verify(customFieldService, never()).unsetCustomField(fieldToKeep1);
@@ -174,15 +204,16 @@ class MetadataAggregatorServiceImplTest {
             when(competenceAimService.getOrCreateCompetenceAim("K1")).thenReturn(aimToKeep1);
             when(competenceAimService.getOrCreateCompetenceAim("K2")).thenReturn(aimToKeep2);
 
-
             final var taxonomyEntity = mock(TaxonomyEntity.class);
             when(taxonomyEntity.getCompetenceAims()).thenReturn(Set.of(aimToKeep1, aimToKeep2));
-            when(taxonomyEntityService.getOrCreateTaxonomyEntity("urn:test:4002")).thenReturn(taxonomyEntity);
+            when(taxonomyEntityService.getOrCreateTaxonomyEntity("urn:test:4002"))
+                    .thenReturn(taxonomyEntity);
 
             final var requestObject = new MetadataDto("urn:test:4001");
             assertNull(requestObject.getCompetenceAims());
 
-            metadataAggregatorService.updateMetadataForTaxonomyEntity("urn:test:4002", requestObject);
+            metadataAggregatorService.updateMetadataForTaxonomyEntity(
+                    "urn:test:4002", requestObject);
 
             verify(taxonomyEntity, times(0)).addCompetenceAim(any());
             verify(taxonomyEntity, times(0)).removeCompetenceAim(any());
@@ -199,21 +230,22 @@ class MetadataAggregatorServiceImplTest {
             when(competenceAimService.getOrCreateCompetenceAim("A1")).thenReturn(aimToAdd1);
             when(competenceAimService.getOrCreateCompetenceAim("A2")).thenReturn(aimToAdd2);
 
-
             final var taxonomyEntity = mock(TaxonomyEntity.class);
             when(taxonomyEntity.getCompetenceAims()).thenReturn(Set.of());
-            when(taxonomyEntityService.getOrCreateTaxonomyEntity("urn:test:4003")).thenReturn(taxonomyEntity);
+            when(taxonomyEntityService.getOrCreateTaxonomyEntity("urn:test:4003"))
+                    .thenReturn(taxonomyEntity);
 
             when(customFieldService.getCustomFields(taxonomyEntity)).thenReturn(Map.of());
 
             final var requestObject = new MetadataDto("urn:test:4001");
-            requestObject.setCompetenceAims(Set.of(
-                    new MetadataDto.CompetenceAim("A1"),
-                    new MetadataDto.CompetenceAim("A2")
-            ));
+            requestObject.setCompetenceAims(
+                    Set.of(
+                            new MetadataDto.CompetenceAim("A1"),
+                            new MetadataDto.CompetenceAim("A2")));
             requestObject.setCustomFields(Map.of("add", "add-value"));
 
-            metadataAggregatorService.updateMetadataForTaxonomyEntity("urn:test:4003", requestObject);
+            metadataAggregatorService.updateMetadataForTaxonomyEntity(
+                    "urn:test:4003", requestObject);
 
             verify(taxonomyEntity).addCompetenceAim(aimToAdd1);
             verify(taxonomyEntity).addCompetenceAim(aimToAdd2);
@@ -226,17 +258,20 @@ class MetadataAggregatorServiceImplTest {
         {
             final var taxonomyEntity = mock(TaxonomyEntity.class);
             when(taxonomyEntity.getCompetenceAims()).thenReturn(Set.of());
-            when(taxonomyEntityService.getOrCreateTaxonomyEntity("urn:test:4004")).thenReturn(taxonomyEntity);
+            when(taxonomyEntityService.getOrCreateTaxonomyEntity("urn:test:4004"))
+                    .thenReturn(taxonomyEntity);
 
             final var requestObject = new MetadataDto("urn:test:4004");
 
-            metadataAggregatorService.updateMetadataForTaxonomyEntity("urn:test:4004", requestObject);
+            metadataAggregatorService.updateMetadataForTaxonomyEntity(
+                    "urn:test:4004", requestObject);
 
             verify(taxonomyEntity, times(0)).setVisible(any(Boolean.class));
 
             requestObject.setVisible(false);
 
-            metadataAggregatorService.updateMetadataForTaxonomyEntity("urn:test:4004", requestObject);
+            metadataAggregatorService.updateMetadataForTaxonomyEntity(
+                    "urn:test:4004", requestObject);
 
             verify(taxonomyEntity).setVisible(false);
         }
@@ -244,7 +279,9 @@ class MetadataAggregatorServiceImplTest {
 
     @Test
     void deleteMetadataForTaxonomyEntity() throws InvalidPublicIdException {
-        doThrow(new InvalidPublicIdException("")).when(publicIdValidator).validatePublicId("urn:test:2");
+        doThrow(new InvalidPublicIdException(""))
+                .when(publicIdValidator)
+                .validatePublicId("urn:test:2");
 
         {
             verifyNoInteractions(taxonomyEntityService);
@@ -281,19 +318,32 @@ class MetadataAggregatorServiceImplTest {
 
         when(entity1.getCompetenceAims()).thenReturn(Set.of(aim1, aim2));
 
-        when(customFieldService.getCustomFields(entity1)).thenReturn(Map.of("test", new CustomFieldServiceImpl.FieldValueImpl(UUID.randomUUID(), "value")));
+        when(customFieldService.getCustomFields(entity1))
+                .thenReturn(
+                        Map.of(
+                                "test",
+                                new CustomFieldServiceImpl.FieldValueImpl(
+                                        UUID.randomUUID(), "value")));
         when(customFieldService.getCustomFields(entity3)).thenReturn(Map.of());
 
-        when(taxonomyEntityService.getTaxonomyEntities(any(Collection.class))).thenAnswer(invocationOnMock -> {
-            final var requestList = (Collection<String>) invocationOnMock.getArgument(0, Collection.class);
+        when(taxonomyEntityService.getTaxonomyEntities(any(Collection.class)))
+                .thenAnswer(
+                        invocationOnMock -> {
+                            final var requestList =
+                                    (Collection<String>)
+                                            invocationOnMock.getArgument(0, Collection.class);
 
-            assertEquals(3, requestList.size());
-            assertTrue(requestList.containsAll(Set.of("urn:test:1", "urn:test:2", "urn:test:3")));
+                            assertEquals(3, requestList.size());
+                            assertTrue(
+                                    requestList.containsAll(
+                                            Set.of("urn:test:1", "urn:test:2", "urn:test:3")));
 
-            return List.of(entity1, entity3);
-        });
+                            return List.of(entity1, entity3);
+                        });
 
-        final var returned = metadataAggregatorService.getMetadataForTaxonomyEntities(Set.of("urn:test:1", "urn:test:2", "urn:test:3"));
+        final var returned =
+                metadataAggregatorService.getMetadataForTaxonomyEntities(
+                        Set.of("urn:test:1", "urn:test:2", "urn:test:3"));
 
         verify(publicIdValidator).validatePublicId("urn:test:1");
         verify(publicIdValidator).validatePublicId("urn:test:2");
@@ -310,8 +360,7 @@ class MetadataAggregatorServiceImplTest {
                             dto.getCompetenceAims().stream()
                                     .map(MetadataDto.CompetenceAim::getCode)
                                     .collect(Collectors.toSet())
-                                    .containsAll(Set.of("A1", "A2"))
-                    );
+                                    .containsAll(Set.of("A1", "A2")));
                     assertNotNull(dto.getCustomFields());
                     assertEquals("value", dto.getCustomFields().get("test"));
                     break;
@@ -367,47 +416,62 @@ class MetadataAggregatorServiceImplTest {
         entity3.setVisible(true);
         entity3.setPublicId(entity3PublicId);
 
-        when(taxonomyEntityService.getTaxonomyEntities(anyCollection())).thenAnswer(invocationOnMock -> {
-            @SuppressWarnings("unchecked") final var requestedPublicIds = (Collection<String>) invocationOnMock.getArgument(0);
+        when(taxonomyEntityService.getTaxonomyEntities(anyCollection()))
+                .thenAnswer(
+                        invocationOnMock -> {
+                            @SuppressWarnings("unchecked")
+                            final var requestedPublicIds =
+                                    (Collection<String>) invocationOnMock.getArgument(0);
 
-            return requestedPublicIds.stream()
-                    .map(publicId -> {
-                        if (publicId.equals(entity1PublicId)) {
-                            return entity1;
-                        } else if (publicId.equals(entity2PublicId)) {
-                            return entity2;
-                        } else if (publicId.equals(entity3PublicId)) {
-                            return entity3;
-                        }
+                            return requestedPublicIds.stream()
+                                    .map(
+                                            publicId -> {
+                                                if (publicId.equals(entity1PublicId)) {
+                                                    return entity1;
+                                                } else if (publicId.equals(entity2PublicId)) {
+                                                    return entity2;
+                                                } else if (publicId.equals(entity3PublicId)) {
+                                                    return entity3;
+                                                }
 
-                        throw new RuntimeException("Unknown test entity publicId (failure in test!)");
-                    }).collect(Collectors.toList());
-        });
+                                                throw new RuntimeException(
+                                                        "Unknown test entity publicId (failure in test!)");
+                                            })
+                                    .collect(Collectors.toList());
+                        });
 
-        when(taxonomyEntityService.getOrCreateTaxonomyEntities(anyCollection())).thenAnswer(invocationOnMock -> {
-            @SuppressWarnings("unchecked") final var requestedPublicIds = (Collection<String>) invocationOnMock.getArgument(0);
+        when(taxonomyEntityService.getOrCreateTaxonomyEntities(anyCollection()))
+                .thenAnswer(
+                        invocationOnMock -> {
+                            @SuppressWarnings("unchecked")
+                            final var requestedPublicIds =
+                                    (Collection<String>) invocationOnMock.getArgument(0);
 
-            return requestedPublicIds.stream()
-                    .map(publicId -> {
-                        if (publicId.equals(entity1PublicId)) {
-                            return entity1;
-                        } else if (publicId.equals(entity2PublicId)) {
-                            return entity2;
-                        } else if (publicId.equals(entity3PublicId)) {
-                            return entity3;
-                        }
+                            return requestedPublicIds.stream()
+                                    .map(
+                                            publicId -> {
+                                                if (publicId.equals(entity1PublicId)) {
+                                                    return entity1;
+                                                } else if (publicId.equals(entity2PublicId)) {
+                                                    return entity2;
+                                                } else if (publicId.equals(entity3PublicId)) {
+                                                    return entity3;
+                                                }
 
-                        throw new RuntimeException("Unknown test entity publicId (failure in test!)");
-                    }).collect(Collectors.toList());
-        });
+                                                throw new RuntimeException(
+                                                        "Unknown test entity publicId (failure in test!)");
+                                            })
+                                    .collect(Collectors.toList());
+                        });
 
         {
             final var update1 = new MetadataDto();
             update1.setPublicId(entity1PublicId);
             update1.setVisible(false);
             update1.setCompetenceAims(
-                    Set.of(new MetadataDto.CompetenceAim("A1"), new MetadataDto.CompetenceAim("A3"))
-            );
+                    Set.of(
+                            new MetadataDto.CompetenceAim("A1"),
+                            new MetadataDto.CompetenceAim("A3")));
             update1.setCustomFields(Map.of("test", "value"));
 
             final var update2 = new MetadataDto();
@@ -421,7 +485,9 @@ class MetadataAggregatorServiceImplTest {
             update3.setPublicId(entity3PublicId);
             update3.setVisible(true);
 
-            final var returnedDtos = metadataAggregatorService.updateMetadataForTaxonomyEntities(List.of(update1, update2, update3));
+            final var returnedDtos =
+                    metadataAggregatorService.updateMetadataForTaxonomyEntities(
+                            List.of(update1, update2, update3));
 
             assertTrue(entity1.getCompetenceAims().containsAll(Set.of(aim1, aim3)));
             assertEquals(2, entity1.getCompetenceAims().size());
@@ -437,15 +503,22 @@ class MetadataAggregatorServiceImplTest {
             assertTrue(entity3.isVisible());
 
             assertEquals(3, returnedDtos.size());
-            assertTrue(returnedDtos.stream().map(MetadataDto::getPublicId).collect(Collectors.toSet()).containsAll(Set.of(entity1PublicId, entity2PublicId, entity3PublicId)));
+            assertTrue(
+                    returnedDtos.stream()
+                            .map(MetadataDto::getPublicId)
+                            .collect(Collectors.toSet())
+                            .containsAll(
+                                    Set.of(entity1PublicId, entity2PublicId, entity3PublicId)));
 
             verify(publicIdValidator, atLeastOnce()).validatePublicId(entity1PublicId);
             verify(publicIdValidator, atLeastOnce()).validatePublicId(entity2PublicId);
             verify(publicIdValidator, atLeastOnce()).validatePublicId(entity3PublicId);
 
             verify(customFieldService, times(1)).setCustomField(entity1, "test", "value");
-            verify(customFieldService, never()).setCustomField(Mockito.eq(entity2), Mockito.anyString(), Mockito.anyString());
-            verify(customFieldService, never()).setCustomField(Mockito.eq(entity2), Mockito.anyString(), Mockito.anyString());
+            verify(customFieldService, never())
+                    .setCustomField(Mockito.eq(entity2), Mockito.anyString(), Mockito.anyString());
+            verify(customFieldService, never())
+                    .setCustomField(Mockito.eq(entity2), Mockito.anyString(), Mockito.anyString());
         }
 
         // Try update with a request DTO without publicId
@@ -453,8 +526,9 @@ class MetadataAggregatorServiceImplTest {
             final var update1 = new MetadataDto();
             update1.setVisible(false);
             update1.setCompetenceAims(
-                    Set.of(new MetadataDto.CompetenceAim("A1"), new MetadataDto.CompetenceAim("A3"))
-            );
+                    Set.of(
+                            new MetadataDto.CompetenceAim("A1"),
+                            new MetadataDto.CompetenceAim("A3")));
 
             try {
                 metadataAggregatorService.updateMetadataForTaxonomyEntities(List.of(update1));

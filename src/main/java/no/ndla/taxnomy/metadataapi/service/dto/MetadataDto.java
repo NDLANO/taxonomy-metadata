@@ -10,7 +10,10 @@ import java.util.Set;
 
 public class MetadataDto {
     public static class CompetenceAim {
-        @Pattern(regexp = "^[A-Za-z0-9-]+$", message = "Error validating competence aim, must only contain letters, numbers and -")
+        @Pattern(
+                regexp = "^[A-Za-z0-9-]+$",
+                message =
+                        "Error validating competence aim, must only contain letters, numbers and -")
         @NotEmpty(message = "Competence aim code is empty")
         private String code;
 
@@ -26,19 +29,16 @@ public class MetadataDto {
             this.code = code;
         }
 
-        CompetenceAim() {
-
-        }
+        CompetenceAim() {}
     }
 
     private String publicId;
 
     private Boolean visible;
 
-    @Valid
-    private Set<CompetenceAim> competenceAims;
+    @Valid private Set<CompetenceAim> competenceAims;
 
-    private Map<String,String> customFields;
+    private Map<String, String> customFields;
 
     public String getPublicId() {
         return publicId;
@@ -60,9 +60,7 @@ public class MetadataDto {
         this.publicId = publicId;
     }
 
-    public MetadataDto() {
-
-    }
+    public MetadataDto() {}
 
     public void populateEmpty() {
         if (this.competenceAims == null) {

@@ -20,26 +20,39 @@ public class CustomFieldServiceImpl implements CustomFieldService {
     private CustomFieldRepository customFieldRepository;
     private CustomFieldValueRepository customFieldValueRepository;
 
-    public CustomFieldServiceImpl(CustomFieldRepository customFieldRepository, CustomFieldValueRepository customFieldValueRepository) {
+    public CustomFieldServiceImpl(
+            CustomFieldRepository customFieldRepository,
+            CustomFieldValueRepository customFieldValueRepository) {
         this.customFieldRepository = customFieldRepository;
         this.customFieldValueRepository = customFieldValueRepository;
     }
 
     @Override
     @Transactional(Transactional.TxType.MANDATORY)
-    public void setCustomField(final TaxonomyEntity taxonomyEntity, final String customField, final String value) {
-        final CustomField customFieldObject = customFieldRepository.findByKey(customField).orElseGet(() -> {
-            CustomField customFieldObj = new CustomField();
-            customFieldObj.setPublicId("urn:customfield:"+UUID.randomUUID().toString());
-            customFieldObj.setKey(customField);
-            return customFieldRepository.save(customFieldObj);
-        });
-        final CustomFieldValue valueObject = customFieldValueRepository.findByTaxonomyEntityAndCustomField(taxonomyEntity.getId(), customFieldObject.getId()).orElseGet(() -> {
-            CustomFieldValue newObject = new CustomFieldValue();
-            newObject.setCustomField(customFieldObject);
-            newObject.setTaxonomyEntity(taxonomyEntity);
-            return newObject;
-        });
+    public void setCustomField(
+            final TaxonomyEntity taxonomyEntity, final String customField, final String value) {
+        final CustomField customFieldObject =
+                customFieldRepository
+                        .findByKey(customField)
+                        .orElseGet(
+                                () -> {
+                                    CustomField customFieldObj = new CustomField();
+                                    customFieldObj.setPublicId(
+                                            "urn:customfield:" + UUID.randomUUID().toString());
+                                    customFieldObj.setKey(customField);
+                                    return customFieldRepository.save(customFieldObj);
+                                });
+        final CustomFieldValue valueObject =
+                customFieldValueRepository
+                        .findByTaxonomyEntityAndCustomField(
+                                taxonomyEntity.getId(), customFieldObject.getId())
+                        .orElseGet(
+                                () -> {
+                                    CustomFieldValue newObject = new CustomFieldValue();
+                                    newObject.setCustomField(customFieldObject);
+                                    newObject.setTaxonomyEntity(taxonomyEntity);
+                                    return newObject;
+                                });
         valueObject.setValue(value);
         customFieldValueRepository.save(valueObject);
     }
@@ -47,13 +60,23 @@ public class CustomFieldServiceImpl implements CustomFieldService {
     @Override
     @Transactional(Transactional.TxType.MANDATORY)
     public Map<String, FieldValue> getCustomFields(TaxonomyEntity taxonomyEntity) {
-        return StreamSupport.stream(customFieldValueRepository.findAllByTaxonomyEntity(taxonomyEntity.getId()).spliterator(), false)
-                .collect(Collectors.toMap(value -> value.getCustomField().getKey(), value -> new FieldValueImpl(value.getId(), value.getValue())));
+        return StreamSupport.stream(
+                        customFieldValueRepository
+                                .findAllByTaxonomyEntity(taxonomyEntity.getId())
+                                .spliterator(),
+                        false)
+                .collect(
+                        Collectors.toMap(
+                                value -> value.getCustomField().getKey(),
+                                value -> new FieldValueImpl(value.getId(), value.getValue())));
     }
 
     @Override
     public void unsetCustomField(UUID id) throws EntityNotFoundException {
-        customFieldValueRepository.delete(customFieldValueRepository.findById(id).orElseThrow(() -> new EntityNotFoundException(id)));
+        customFieldValueRepository.delete(
+                customFieldValueRepository
+                        .findById(id)
+                        .orElseThrow(() -> new EntityNotFoundException(id)));
     }
 
     @Override
@@ -72,7 +95,9 @@ public class CustomFieldServiceImpl implements CustomFieldService {
         }
 
         Iterable<CustomFieldValue> customFields;
-        if (value != null) customFields = customFieldValueRepository.findAllByCustomFieldAndValue(customFieldId, value);
+        if (value != null)
+            customFields =
+                    customFieldValueRepository.findAllByCustomFieldAndValue(customFieldId, value);
         else customFields = customFieldValueRepository.findAllByCustomField(customFieldId);
 
         return StreamSupport.stream(customFields.spliterator(), false)

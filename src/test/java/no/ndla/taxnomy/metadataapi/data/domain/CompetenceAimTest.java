@@ -60,7 +60,10 @@ class CompetenceAimTest {
         assertTrue(competenceAim.containsTaxonomyEntity(taxonomyEntity2));
         assertEquals(2, competenceAim.getTaxonomyEntities().size());
 
-        assertTrue(competenceAim.getTaxonomyEntities().containsAll(Set.of(taxonomyEntity1, taxonomyEntity2)));
+        assertTrue(
+                competenceAim
+                        .getTaxonomyEntities()
+                        .containsAll(Set.of(taxonomyEntity1, taxonomyEntity2)));
 
         competenceAim.removeTaxonomyEntity(taxonomyEntity1);
 

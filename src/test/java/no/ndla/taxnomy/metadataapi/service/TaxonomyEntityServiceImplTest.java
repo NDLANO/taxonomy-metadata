@@ -39,7 +39,9 @@ class TaxonomyEntityServiceImplTest {
         taxonomyEntityRepository.saveAndFlush(taxonomyEntity);
 
         assertTrue(taxonomyEntityService.getTaxonomyEntity("urn:test:1300").isPresent());
-        assertSame(taxonomyEntity, taxonomyEntityService.getTaxonomyEntity("urn:test:1300").orElseThrow());
+        assertSame(
+                taxonomyEntity,
+                taxonomyEntityService.getTaxonomyEntity("urn:test:1300").orElseThrow());
     }
 
     @Test
@@ -47,14 +49,17 @@ class TaxonomyEntityServiceImplTest {
     void getOrCreateTaxonomyEntity() {
         assertFalse(taxonomyEntityService.getTaxonomyEntity("urn:test:1301").isPresent());
 
-        final var taxonomyEntity1 = taxonomyEntityService.getOrCreateTaxonomyEntity("urn:test:1301");
+        final var taxonomyEntity1 =
+                taxonomyEntityService.getOrCreateTaxonomyEntity("urn:test:1301");
 
         assertNotNull(taxonomyEntity1);
         assertNotNull(taxonomyEntity1.getId());
         assertEquals("urn:test:1301", taxonomyEntity1.getPublicId());
 
         assertTrue(taxonomyEntityService.getTaxonomyEntity("urn:test:1301").isPresent());
-        assertSame(taxonomyEntity1, taxonomyEntityService.getTaxonomyEntity("urn:test:1301").orElseThrow());
+        assertSame(
+                taxonomyEntity1,
+                taxonomyEntityService.getTaxonomyEntity("urn:test:1301").orElseThrow());
 
         assertFalse(taxonomyEntityService.getTaxonomyEntity("urn:test:1302").isPresent());
 
@@ -63,7 +68,9 @@ class TaxonomyEntityServiceImplTest {
         taxonomyEntityRepository.saveAndFlush(taxonomyEntity2);
 
         assertTrue(taxonomyEntityService.getTaxonomyEntity("urn:test:1302").isPresent());
-        assertSame(taxonomyEntity2, taxonomyEntityService.getTaxonomyEntity("urn:test:1302").orElseThrow());
+        assertSame(
+                taxonomyEntity2,
+                taxonomyEntityService.getTaxonomyEntity("urn:test:1302").orElseThrow());
     }
 
     @Test
@@ -119,7 +126,10 @@ class TaxonomyEntityServiceImplTest {
         assertEquals(1, competenceAim1.getTaxonomyEntities().size());
         assertEquals(2, competenceAim2.getTaxonomyEntities().size());
         assertTrue(competenceAim1.getTaxonomyEntities().contains(taxonomyEntity1));
-        assertTrue(competenceAim2.getTaxonomyEntities().containsAll(Set.of(taxonomyEntity1, taxonomyEntity2)));
+        assertTrue(
+                competenceAim2
+                        .getTaxonomyEntities()
+                        .containsAll(Set.of(taxonomyEntity1, taxonomyEntity2)));
 
         taxonomyEntityService.deleteTaxonomyEntity("urn:test:34");
 
@@ -157,14 +167,16 @@ class TaxonomyEntityServiceImplTest {
 
         taxonomyEntityRepository.saveAll(Set.of(entity1, entity2, entity3));
 
-        final var returned1 = taxonomyEntityService.getTaxonomyEntities(Set.of("urn:test:1", "urn:test:3"));
+        final var returned1 =
+                taxonomyEntityService.getTaxonomyEntities(Set.of("urn:test:1", "urn:test:3"));
         assertEquals(2, returned1.size());
         assertTrue(returned1.containsAll(Set.of(entity1, entity3)));
 
         final var returned2 = taxonomyEntityService.getTaxonomyEntities(Set.of());
         assertEquals(0, returned2.size());
 
-        final var returned3 = taxonomyEntityService.getTaxonomyEntities(Set.of("urn:test:1", "urn:test:4"));
+        final var returned3 =
+                taxonomyEntityService.getTaxonomyEntities(Set.of("urn:test:1", "urn:test:4"));
         assertEquals(1, returned3.size());
         assertTrue(returned3.contains(entity1));
     }
@@ -178,7 +190,9 @@ class TaxonomyEntityServiceImplTest {
         final var existingEntity = taxonomyEntityRepository.saveAndFlush(existingEntityToCreate);
 
         // Should create urn:test:2001, but return existing urn:test:2002
-        final var taxonomyEntities = taxonomyEntityService.getOrCreateTaxonomyEntities(List.of("urn:test:2001", "urn:test:2002"));
+        final var taxonomyEntities =
+                taxonomyEntityService.getOrCreateTaxonomyEntities(
+                        List.of("urn:test:2001", "urn:test:2002"));
 
         // Returned list is ordered the same order as received (when ordered)
         final var returnedEntity1 = taxonomyEntities.get(0);
@@ -192,7 +206,9 @@ class TaxonomyEntityServiceImplTest {
         assertEquals("urn:test:2001", returnedEntity1.getPublicId());
         assertEquals(0, returnedEntity1.getCompetenceAims().size());
         assertTrue(returnedEntity1.isVisible());
-        assertSame(returnedEntity1, taxonomyEntityRepository.findFirstByPublicId("urn:test:2001").orElseThrow());
+        assertSame(
+                returnedEntity1,
+                taxonomyEntityRepository.findFirstByPublicId("urn:test:2001").orElseThrow());
     }
 
     @Test

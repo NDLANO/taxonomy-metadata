@@ -9,12 +9,16 @@ import java.util.UUID;
 
 public interface CustomFieldService {
     void setCustomField(TaxonomyEntity taxonomyEntity, String customField, String value);
-    Map<String,FieldValue> getCustomFields(TaxonomyEntity taxonomyEntity);
+
+    Map<String, FieldValue> getCustomFields(TaxonomyEntity taxonomyEntity);
+
     void unsetCustomField(UUID id) throws EntityNotFoundException;
+
     List<TaxonomyEntity> getTaxonomyEntitiesByCustomFieldKeyValue(String key, String value);
 
     interface FieldValue {
         UUID getId();
+
         String getValue();
     }
 }

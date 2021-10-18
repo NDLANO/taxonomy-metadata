@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public interface CustomFieldRepository extends JpaRepository<CustomField, UUID> {
     Optional<CustomField> findFirstByKey(String key);
+
     default Optional<CustomField> findByKey(String key) {
         return findFirstByKey(key);
     }
