@@ -18,14 +18,11 @@ public class CompetenceAimServiceImpl implements CompetenceAimService {
     @Override
     @Transactional(propagation = MANDATORY)
     public CompetenceAim getOrCreateCompetenceAim(String code) {
-        return competenceAimRepository
-                .findFirstByCode(code)
-                .orElseGet(
-                        () -> {
-                            final var competenceAim = new CompetenceAim();
-                            competenceAim.setCode(code);
+        return competenceAimRepository.findFirstByCode(code).orElseGet(() -> {
+            final var competenceAim = new CompetenceAim();
+            competenceAim.setCode(code);
 
-                            return competenceAimRepository.saveAndFlush(competenceAim);
-                        });
+            return competenceAimRepository.saveAndFlush(competenceAim);
+        });
     }
 }

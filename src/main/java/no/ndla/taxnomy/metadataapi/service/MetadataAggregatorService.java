@@ -8,8 +8,7 @@ import java.util.Collection;
 import java.util.List;
 
 public interface MetadataAggregatorService {
-    List<MetadataDto> getMetadataForTaxonomyEntities(Collection<String> publicIds)
-            throws InvalidPublicIdException;
+    List<MetadataDto> getMetadataForTaxonomyEntities(Collection<String> publicIds) throws InvalidPublicIdException;
 
     MetadataDto getMetadataForTaxonomyEntity(String publicId) throws InvalidPublicIdException;
 

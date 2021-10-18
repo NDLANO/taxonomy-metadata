@@ -12,19 +12,20 @@ import java.util.stream.Collectors;
 
 @Entity
 public class TaxonomyEntity {
-    @Id private UUID id;
+    @Id
+    private UUID id;
 
-    @Column private String publicId;
+    @Column
+    private String publicId;
 
-    @UpdateTimestamp private Instant updatedAt;
-    @CreationTimestamp private Instant createdAt;
+    @UpdateTimestamp
+    private Instant updatedAt;
+    @CreationTimestamp
+    private Instant createdAt;
 
     @SuppressWarnings("JpaDataSourceORMInspection")
     @ManyToMany(cascade = CascadeType.ALL)
-    @JoinTable(
-            name = "taxonomy_entity_competence_aim",
-            joinColumns = @JoinColumn(name = "taxonomy_entity_id"),
-            inverseJoinColumns = @JoinColumn(name = "competence_aim_id"))
+    @JoinTable(name = "taxonomy_entity_competence_aim", joinColumns = @JoinColumn(name = "taxonomy_entity_id"), inverseJoinColumns = @JoinColumn(name = "competence_aim_id"))
     private Set<CompetenceAim> competenceAims = new HashSet<>();
 
     // JPA will delete custom field values automatically if they are removed from this set and this
@@ -33,18 +34,12 @@ public class TaxonomyEntity {
     // is deleted
     // - makes sense - right? otherwise service level code would have to always delete values before
     // deleting this.
-    @OneToMany(
-            cascade = {
-                CascadeType.REMOVE,
-                CascadeType.PERSIST,
-                CascadeType.MERGE,
-                CascadeType.REFRESH
-            },
-            orphanRemoval = true,
-            mappedBy = "taxonomyEntity")
+    @OneToMany(cascade = { CascadeType.REMOVE, CascadeType.PERSIST, CascadeType.MERGE,
+            CascadeType.REFRESH }, orphanRemoval = true, mappedBy = "taxonomyEntity")
     private Set<CustomFieldValue> customFieldValues;
 
-    @Column private boolean visible = true;
+    @Column
+    private boolean visible = true;
 
     public void addCompetenceAim(CompetenceAim competenceAim) {
         this.competenceAims.add(competenceAim);

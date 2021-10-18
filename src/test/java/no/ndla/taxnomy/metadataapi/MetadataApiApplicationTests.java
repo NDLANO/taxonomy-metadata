@@ -7,5 +7,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 class MetadataApiApplicationTests {
 
     @Test
-    void contextLoads() {}
+    void contextLoads() {
+    }
 }

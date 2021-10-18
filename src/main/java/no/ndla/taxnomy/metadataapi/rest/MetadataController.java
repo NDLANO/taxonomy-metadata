@@ -26,8 +26,7 @@ public class MetadataController {
     private final MetadataAggregatorService metadataAggregatorService;
     private final CustomFieldService customFieldService;
 
-    public MetadataController(
-            MetadataAggregatorService metadataAggregatorService,
+    public MetadataController(MetadataAggregatorService metadataAggregatorService,
             CustomFieldService customFieldService) {
         this.metadataAggregatorService = metadataAggregatorService;
         this.customFieldService = customFieldService;
@@ -36,10 +35,8 @@ public class MetadataController {
     private Instant efficiencyWarnRatelimit = null;
 
     @GetMapping
-    public List<MetadataDto> getMultiple(
-            @RequestParam(required = false) String publicIds,
-            @RequestParam(required = false) String key,
-            @RequestParam(required = false) String value) {
+    public List<MetadataDto> getMultiple(@RequestParam(required = false) String publicIds,
+            @RequestParam(required = false) String key, @RequestParam(required = false) String value) {
         // Read comma separated list of unique publicIds in query parameter
 
         final Set<String> publicIdSet;
@@ -47,10 +44,8 @@ public class MetadataController {
             if (key == null && value == null) {
                 throw new InvalidRequestException("Query publicIds and key/value not specified");
             }
-            publicIdSet =
-                    customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue(key, value).stream()
-                            .map(TaxonomyEntity::getPublicId)
-                            .collect(Collectors.toSet());
+            publicIdSet = customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue(key, value).stream()
+                    .map(TaxonomyEntity::getPublicId).collect(Collectors.toSet());
 
             if (publicIdSet.size() > 100) {
                 /*
@@ -69,9 +64,7 @@ public class MetadataController {
                 } else {
                     Instant efficiencyWarnRatelimit = this.efficiencyWarnRatelimit;
                     Instant now = Instant.now();
-                    if (!Duration.between(efficiencyWarnRatelimit, now)
-                            .minus(Duration.ofMinutes(10))
-                            .isNegative()) {
+                    if (!Duration.between(efficiencyWarnRatelimit, now).minus(Duration.ofMinutes(10)).isNegative()) {
                         synchronized (this) {
                             if (efficiencyWarnRatelimit == this.efficiencyWarnRatelimit) {
                                 this.efficiencyWarnRatelimit = now;
@@ -93,26 +86,20 @@ public class MetadataController {
             return List.of();
         } else if (key != null || value != null) {
             if (key == null || value == null) {
-                throw new InvalidRequestException(
-                        "Query publicIds and none or both key/value not specified");
+                throw new InvalidRequestException("Query publicIds and none or both key/value not specified");
             }
             final var publicIdFilter = new HashSet<>(Arrays.asList(publicIds.split(",")));
-            publicIdSet =
-                    customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue(key, value).stream()
-                            .map(TaxonomyEntity::getPublicId)
-                            .filter(publicIdFilter::contains)
-                            .collect(Collectors.toSet());
+            publicIdSet = customFieldService.getTaxonomyEntitiesByCustomFieldKeyValue(key, value).stream()
+                    .map(TaxonomyEntity::getPublicId).filter(publicIdFilter::contains).collect(Collectors.toSet());
 
             if (publicIdSet.size() > 100) {
-                throw new InvalidRequestException(
-                        "Cannot get metadata for more than 100 entities in each request");
+                throw new InvalidRequestException("Cannot get metadata for more than 100 entities in each request");
             }
         } else {
             publicIdSet = new HashSet<>(Arrays.asList(publicIds.split(",")));
 
             if (publicIdSet.size() > 100) {
-                throw new InvalidRequestException(
-                        "Cannot get metadata for more than 100 entities in each request");
+                throw new InvalidRequestException("Cannot get metadata for more than 100 entities in each request");
             }
         }
 
@@ -133,38 +120,30 @@ public class MetadataController {
     }
 
     @PutMapping("/{publicId}")
-    public MetadataDto put(
-            @PathVariable String publicId,
-            @RequestBody @Valid MetadataDto requestMetadataDto,
+    public MetadataDto put(@PathVariable String publicId, @RequestBody @Valid MetadataDto requestMetadataDto,
             BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            throw new InvalidRequestException(
-                    bindingResult.getErrorCount()
-                            + " errors in provided body, first error: "
-                            + bindingResult.getAllErrors().get(0));
+            throw new InvalidRequestException(bindingResult.getErrorCount() + " errors in provided body, first error: "
+                    + bindingResult.getAllErrors().get(0));
         }
 
         try {
-            return metadataAggregatorService.updateMetadataForTaxonomyEntity(
-                    publicId, requestMetadataDto);
+            return metadataAggregatorService.updateMetadataForTaxonomyEntity(publicId, requestMetadataDto);
         } catch (InvalidDataException | InvalidPublicIdException e) {
             throw new InvalidRequestException(e);
         }
     }
 
     @PutMapping("/")
-    public List<MetadataDto> putBulk(
-            @RequestBody @Valid MetadataDto[] requestMetadataDtos, BindingResult bindingResult) {
+    public List<MetadataDto> putBulk(@RequestBody @Valid MetadataDto[] requestMetadataDtos,
+            BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            throw new InvalidRequestException(
-                    bindingResult.getErrorCount()
-                            + " errors in provided body, first error: "
-                            + bindingResult.getAllErrors().get(0));
+            throw new InvalidRequestException(bindingResult.getErrorCount() + " errors in provided body, first error: "
+                    + bindingResult.getAllErrors().get(0));
         }
 
         try {
-            return metadataAggregatorService.updateMetadataForTaxonomyEntities(
-                    Arrays.asList(requestMetadataDtos));
+            return metadataAggregatorService.updateMetadataForTaxonomyEntities(Arrays.asList(requestMetadataDtos));
         } catch (InvalidDataException | InvalidPublicIdException e) {
             throw new InvalidRequestException(e);
         }

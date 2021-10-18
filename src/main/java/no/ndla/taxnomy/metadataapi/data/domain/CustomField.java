@@ -12,14 +12,20 @@ import java.util.UUID;
 
 @Entity
 public class CustomField {
-    @Id @Column private UUID id;
+    @Id
+    @Column
+    private UUID id;
 
-    @Column private String publicId;
+    @Column
+    private String publicId;
 
-    @UpdateTimestamp private Instant updatedAt;
-    @CreationTimestamp private Instant createdAt;
+    @UpdateTimestamp
+    private Instant updatedAt;
+    @CreationTimestamp
+    private Instant createdAt;
 
-    @Column private String key;
+    @Column
+    private String key;
 
     @PrePersist
     void prePersist() {

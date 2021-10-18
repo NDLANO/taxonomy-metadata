@@ -44,12 +44,8 @@ public class TaxonomyEntityServiceImpl implements TaxonomyEntityService {
     @Override
     @Transactional(propagation = MANDATORY)
     public TaxonomyEntity getOrCreateTaxonomyEntity(String publicId) {
-        return taxonomyEntityRepository
-                .findFirstByPublicId(publicId)
-                .orElseGet(
-                        () ->
-                                taxonomyEntityRepository.saveAndFlush(
-                                        createEmptyTaxonomyEntity(publicId)));
+        return taxonomyEntityRepository.findFirstByPublicId(publicId)
+                .orElseGet(() -> taxonomyEntityRepository.saveAndFlush(createEmptyTaxonomyEntity(publicId)));
     }
 
     @Override
@@ -59,20 +55,12 @@ public class TaxonomyEntityServiceImpl implements TaxonomyEntityService {
             return List.of();
         }
 
-        final var existingEntities =
-                getTaxonomyEntities(publicIds).stream()
-                        .collect(
-                                Collectors.toMap(
-                                        TaxonomyEntity::getPublicId,
-                                        taxonomyEntity -> taxonomyEntity));
+        final var existingEntities = getTaxonomyEntities(publicIds).stream()
+                .collect(Collectors.toMap(TaxonomyEntity::getPublicId, taxonomyEntity -> taxonomyEntity));
 
-        final var entitiesToReturn =
-                publicIds.stream()
-                        .map(
-                                publicId ->
-                                        existingEntities.computeIfAbsent(
-                                                publicId, this::createEmptyTaxonomyEntity))
-                        .collect(Collectors.toList());
+        final var entitiesToReturn = publicIds.stream()
+                .map(publicId -> existingEntities.computeIfAbsent(publicId, this::createEmptyTaxonomyEntity))
+                .collect(Collectors.toList());
 
         return taxonomyEntityRepository.saveAll(entitiesToReturn);
     }
@@ -93,8 +81,6 @@ public class TaxonomyEntityServiceImpl implements TaxonomyEntityService {
     @Override
     @Transactional
     public void deleteTaxonomyEntity(String publicId) {
-        taxonomyEntityRepository
-                .findFirstByPublicId(publicId)
-                .ifPresent(taxonomyEntityRepository::delete);
+        taxonomyEntityRepository.findFirstByPublicId(publicId).ifPresent(taxonomyEntityRepository::delete);
     }
 }

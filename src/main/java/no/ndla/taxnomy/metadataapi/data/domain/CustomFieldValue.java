@@ -5,7 +5,8 @@ import java.util.UUID;
 
 @Entity
 public class CustomFieldValue {
-    @Id private UUID id;
+    @Id
+    private UUID id;
 
     @ManyToOne
     @JoinColumn(name = "taxonomy_entity_id")
@@ -15,7 +16,8 @@ public class CustomFieldValue {
     @JoinColumn(name = "custom_field_id")
     private CustomField customField;
 
-    @Column private String value;
+    @Column
+    private String value;
 
     @PrePersist
     void prePersist() {
