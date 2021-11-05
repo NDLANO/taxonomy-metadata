@@ -5,7 +5,7 @@ COPY ./ src/
 WORKDIR /src
 RUN mvn clean package -DskipTests
 
-FROM openjdk:11
+FROM adoptopenjdk/openjdk11:alpine-slim
 EXPOSE 80
 COPY --from=0 /src/target/metadata-api-0.1-SNAPSHOT.jar /app.jar
 CMD java -jar /app.jar
